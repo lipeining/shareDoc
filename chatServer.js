@@ -5,17 +5,17 @@ var sessionParser = require('./sessionMiddleware').sessionParser;
 
 module.exports = function (server) {
     var wss = new WebSocket.Server({
-        verifyClient: (info, done) => {
-            console.log('Parsing session from request...');
-            sessionParser(info.req, {}, () => {
-                console.log('Session is parsed!');
-                //
-                // We can reject the connection by returning false to done(). For example,
-                // reject here if user is unknown.
-                //
-                done(info.req.session);
-            });
-        },
+        // verifyClient: (info, done) => {
+        //     console.log('Parsing session from request...');
+        //     sessionParser(info.req, {}, () => {
+        //         console.log('Session is parsed!');
+        //         //
+        //         // We can reject the connection by returning false to done(). For example,
+        //         // reject here if user is unknown.
+        //         //
+        //         done(info.req.session);
+        //     });
+        // },
         noServer: true
     });
 
@@ -28,19 +28,19 @@ module.exports = function (server) {
         // 我们可以修改对应的session。可以读取之。
         ws.on('message', function (message) {
             if (message === 'wow') {
-                // do nothing
-                console.log(`WS test message ${message} from user ${req.session.user}`);
-                console.log(req.session.user);
+                // // do nothing
+                // console.log(`WS test message ${message} from user ${req.session.user}`);
+                // console.log(req.session.user);
             } else {
-                // Here we can now use session parameters.
-                console.log(`WS message ${message} from user ${req.session.user}`);
-                console.log(req.session.user);
-                // try to reset the session
-                req.session.user = {
-                    id: 2,
-                    name: 'duoyi'
-                };
-                req.session.save();
+                // // Here we can now use session parameters.
+                // console.log(`WS message ${message} from user ${req.session.user}`);
+                // console.log(req.session.user);
+                // // try to reset the session
+                // req.session.user = {
+                //     id: 2,
+                //     name: 'duoyi'
+                // };
+                // req.session.save();
                 ws.send('server to client ttt');
             }
         });
