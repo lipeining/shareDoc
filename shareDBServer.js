@@ -3,7 +3,7 @@ var WebSocketJSONStream = require('websocket-json-stream');
 var ShareDB = require('sharedb');
 var richText = require('rich-text');
 ShareDB.types.register(richText.type);
-var db = require('./db');
+var db = require('./sharedocdb');
 // var mongodb = require('mongodb');
 // 不能使用
 // var db = require('sharedb-mongo')({mongo: function(callback) {

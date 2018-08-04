@@ -1,20 +1,21 @@
  var express = require('express');
  var router = express.Router();
  const constants = require('../constants');
- var db = require('../db');
+ var db = require('../sharedocdb');
  var util = require('util');
+ const APIError = require('../tools/APIError');
  /* GET home page. */
- router.get('/', function (req, res, next) {
-   // res.render('index', {
-   //   title: 'Express'
-   // });
-   return res.json({
-     code: 0,
-     Message: {
-       index: 'index'
-     }
-   })
- });
+//  router.get('/', function (req, res, next) {
+//    // res.render('index', {
+//    //   title: 'Express'
+//    // });
+//    return res.json({
+//      code: 0,
+//      Message: {
+//        index: 'index'
+//      }
+//    })
+//  });
  router.get('/login', function (req, res, next) {
    let i = parseInt(req.query.id) || 1;
    req.session.user = constants.Users[i - 1];
@@ -57,10 +58,12 @@
   //      });
   //    }
   //  });
-   return res.json({
-     code: 0,
-     Message: req.session.user
-   });
+  throw new APIError('in test throw an error', 401);
+  return next(new APIError('in test next an error', 400));
+  //  return res.json({
+  //    code: 0,
+  //    Message: req.session.user
+  //  });
  });
  router.get('/doccontent', function (req, res, next) {
    let collection = req.query.collection || '';
@@ -119,13 +122,13 @@
   //   });
  });
 
- router.get('/logout', (request, response) => {
-   console.log('Destroying session');
-   request.session.destroy();
-   response.send({
-     code: 0,
-     Message: 'Session destroyed'
-   });
- });
+//  router.get('/logout', (request, response) => {
+//    console.log('Destroying session');
+//    request.session.destroy();
+//    response.send({
+//      code: 0,
+//      Message: 'Session destroyed'
+//    });
+//  });
 
  module.exports = router;

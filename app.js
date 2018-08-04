@@ -7,10 +7,13 @@ var logger = require('morgan');
 var session = require('express-session');
 var url = require('url');
 
+var httpStatus = require('http-status');
+const APIError = require('./tools/APIError');
 var sessionParser = require('./sessionMiddleware').sessionParser;
+var mongoose = require('mongoose');
 
 var indexRouter = require('./routes/index');
-// var usersRouter = require('./routes/users');
+var usersRouter = require('./routes/users');
 
 var app = express();
 var server = http.createServer(app);
@@ -27,7 +30,7 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/v1/', indexRouter);
-// app.use('/users', usersRouter);
+app.use('/api/v1/', usersRouter);
 
 // init websockets servers
 var wssShareDB = require('./shareDBServer')(server);
@@ -49,29 +52,49 @@ server.on('upgrade', (request, socket, head) => {
   }
 });
 
-// catch 404 and forward to error handler
-app.use(function (req, res, next) {
-  next(createError(404));
+// if error is not an instanceOf APIError, convert it.
+app.use((err, req, res, next) => {
+ if (!(err instanceof APIError)) {
+    const apiError = new APIError(err.message, err.status);
+    return next(apiError);
+  }
+  return next(err);
 });
 
-// error handler
-app.use(function (err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+// catch 404 and forward to error handler
+app.use((req, res, next) => {
+  const err = new APIError(`API not found ${req.originalUrl}`, httpStatus.NOT_FOUND);
+  return next(err);
+});
 
-  // render the error page
-  res.status(err.status || 404);
-  return res.json({
+// error handler, send stacktrace only during development
+app.use(function(err, req, res, next){ // eslint-disable-line no-unused-vars
+  return res.status(err.status).json({
     code: 4,
-    Message: {
-      err: 'not found'
-    }
+    Message: err.message,
+    stack:  err.stack 
   });
 });
 
+// error handler
+// app.use(function (err, req, res, next) {
+//   // set locals, only providing error in development
+//   res.locals.message = err.message;
+//   res.locals.error = req.app.get('env') === 'development' ? err : {};
+
+//   // render the error page
+//   res.status(err.status || 404);
+//   return res.status(400).send({
+//     code: 4,
+//     Message: {
+//       err: 'not found'
+//     }
+//   });
+// });
+
 function start() {
   app.set('port', 5000);
+  mongoose.connect('mongodb://localhost:27017/userdoc');
   server.listen(5000);
   console.log('Listening on http://localhost:5000');
 }
