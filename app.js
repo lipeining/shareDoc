@@ -14,6 +14,7 @@ var mongoose = require('mongoose');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
+var docsRouter = require('./routes/docs');
 
 var app = express();
 var server = http.createServer(app);
@@ -31,6 +32,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/v1/', indexRouter);
 app.use('/api/v1/', usersRouter);
+app.use('/api/v1/', docsRouter);
 
 // init websockets servers
 var wssShareDB = require('./shareDBServer')(server);

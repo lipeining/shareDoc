@@ -9,6 +9,13 @@ module.exports = ErrorHanlder({
     update,
     logout,
 });
+/**
+ *
+ *
+ * @param {*} res
+ * @param {*} Message
+ * @returns
+ */
 async function returnMessage(res, Message) {
     return await res.json({
         code: 0,
@@ -16,17 +23,15 @@ async function returnMessage(res, Message) {
     });
 }
 
+/**
+ *
+ *
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns
+ */
 async function getUsers(req, res, next) {
-    // const errors = validationResult(req);
-    // if (!errors.isEmpty()) {
-    //     return res.status(422).json({
-    //         Message: {
-    //             err: errors.array()
-    //         },
-    //         code: 4
-    //     });
-    // }
-
     let pageIndex = parseInt(req.query.pageIndex) || 1;
     let pageSize = parseInt(req.query.pageSize) || 10;
     let options = {
@@ -53,63 +58,89 @@ async function getUser(req, res, next) {
     // });
 }
 
+/**
+ *
+ *
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns
+ */
 async function login(req, res, next) {
     let options = {
         password: req.body.password || '',
-        email: req.body.email || '',
-        phone: parseInt(req.body.phone) || 0
+        email: req.body.email || ''
     };
     let user = await userService.login(options);
+    user.password = '';
+    req.session.user = user;
     if (user) {
         return await returnMessage(res, {
             user: user
         });
-    } else {}
+    } else {
+        return next(new APIError('user not found', 400))
+    }
 }
 
+/**
+ *
+ *
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns
+ */
 async function reg(req, res, next) {
     let newUser = {
         name: req.body.name || '',
         password: req.body.password || '',
         email: req.body.email || '',
-        phone: parseInt(req.body.phone) || 0,
         permission: 0,
         intro: req.body.intro || ''
     };
-
-    let [user, created] = await userService.reg(newUser);
-    if (created) {
-        user.password = '';
-        req.session.user = user;
-        return await returnMessage(res, {
-            user: user
-        });
-    } else {
-
-    }
+    let user = await userService.reg(newUser);
+    user.password = '';
+    req.session.user = user;
+    return await returnMessage(res, {
+        user: user
+    });
 }
 
+/**
+ *
+ *
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns
+ */
 async function update(req, res, next) {
-
     let user = {
         id: parseInt(req.body.id) || 0,
-        phone: parseInt(req.body.phone) || 0,
         name: req.body.name || '',
         email: req.body.email || '',
         intro: req.body.intro || ''
     };
     let count = await userService.update(user);
-    console.log('update return count is:' + count);
     if (count) {
         return await returnMessage(res, {});
     } else {
         return next(new APIError('wrong input', 400));
     }
-
 }
 
+/**
+ *
+ *
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns
+ */
 async function logout(req, res, next) {
     req.session.destroy();
+    console.log('session destroy');
     return res.json({
         code: 0
     });

@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 const UserSchema = new Schema({
     name: {
         type: String,
-        minlength: 5,
+        minlength: 2,
         maxlength: 50,
         default: ''
     },
@@ -27,6 +27,14 @@ const UserSchema = new Schema({
     avatar: {
         type: String,
         default: ''
+    },
+    intro: {
+        type: String,
+        default: ''
+    },
+    permission:{
+        type: Number,
+        default: 0
     },
     date: {
         type: Date,

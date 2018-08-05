@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 const DocSchema = new Schema({
     name: {
         type: String,
-        minlength: 5,
+        minlength: 2,
         maxlength: 50,
         default: ''
     },
