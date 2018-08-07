@@ -1,2 +1,2 @@
-var db = require('sharedb-mongo')('mongodb://localhost:27017/sharedoc');
+var db = require('sharedb-mongo')('mongodb://db:27017/sharedoc');
 module.exports = db;

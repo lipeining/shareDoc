@@ -56,7 +56,7 @@ server.on('upgrade', (request, socket, head) => {
 
 // if error is not an instanceOf APIError, convert it.
 app.use((err, req, res, next) => {
- if (!(err instanceof APIError)) {
+  if (!(err instanceof APIError)) {
     const apiError = new APIError(err.message, err.status);
     return next(apiError);
   }
@@ -70,11 +70,11 @@ app.use((req, res, next) => {
 });
 
 // error handler, send stacktrace only during development
-app.use(function(err, req, res, next){ // eslint-disable-line no-unused-vars
+app.use(function (err, req, res, next) { // eslint-disable-line no-unused-vars
   return res.status(err.status).json({
     code: 4,
     Message: err.message,
-    stack:  err.stack 
+    stack: err.stack
   });
 });
 
@@ -96,7 +96,12 @@ app.use(function(err, req, res, next){ // eslint-disable-line no-unused-vars
 
 function start() {
   app.set('port', 5000);
-  mongoose.connect('mongodb://localhost:27017/userdoc');
+  mongoose.connect('mongodb://db:27017/userdoc').then(function () {
+    console.log('MongoDB is connected')
+  }).catch(function (err) {
+    console.log(err);
+    console.log('MongoDB connection down');
+  });
   server.listen(5000);
   console.log('Listening on http://localhost:5000');
 }

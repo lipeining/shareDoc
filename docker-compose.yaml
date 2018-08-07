@@ -1,0 +1,43 @@
+version: '3'
+
+services:
+  sharedoc:
+    image: "node:8"
+    working_dir: /home/node/app
+    depends_on:
+      - db
+      - redis
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ./:/home/node/app
+    links:
+      - redis
+      - db
+    expose:
+      - "5000"
+    ports:
+      - "5000:5000"
+    command: "npm start"
+
+  redis:
+    image: "redis:4.0"
+    ports:
+      - "6379:6379"
+    expose:
+      - "6379"
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: "redis-server /usr/local/etc/redis/redis.conf"
+
+  db:
+    image: "mongo:3.4"
+    restart: "always"
+    expose:
+      - "27017"
+    ports:
+      - "27017:27017"
+    command: ["--config", "/etc/mongo.conf", "--bind_ip", "0.0.0.0", "--noauth"]
+    volumes:
+      - ./mongo.conf:/etc/mongo.conf
+      - /data/mongo/db:/data/db
