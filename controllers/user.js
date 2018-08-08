@@ -40,8 +40,13 @@ async function getUsers(req, res, next) {
         search: req.query.search || ''
     };
     let users = await userService.getUsers(options);
-    return await returnMessage(res, {
-        users: users
+    // return await returnMessage(res, {
+    //     users: users
+    // });
+    return next({
+        msg: {
+            users: users
+        }
     });
 }
 
@@ -75,8 +80,13 @@ async function login(req, res, next) {
     user.password = '';
     req.session.user = user;
     if (user) {
-        return await returnMessage(res, {
-            user: user
+        // return await returnMessage(res, {
+        //     user: user
+        // });
+        return next({
+            msg: {
+                user: user
+            }
         });
     } else {
         return next(new APIError('user not found', 400))
@@ -102,8 +112,13 @@ async function reg(req, res, next) {
     let user = await userService.reg(newUser);
     user.password = '';
     req.session.user = user;
-    return await returnMessage(res, {
-        user: user
+    // return await returnMessage(res, {
+    //     user: user
+    // });
+    return next({
+        msg: {
+            user: user
+        }
     });
 }
 
@@ -124,7 +139,7 @@ async function update(req, res, next) {
     };
     let count = await userService.update(user);
     if (count) {
-        return await returnMessage(res, {});
+        return next({});
     } else {
         return next(new APIError('wrong input', 400));
     }
@@ -141,7 +156,5 @@ async function update(req, res, next) {
 async function logout(req, res, next) {
     req.session.destroy();
     console.log('session destroy');
-    return res.json({
-        code: 0
-    });
+    return res.json({});
 }

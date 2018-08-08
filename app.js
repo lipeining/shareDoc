@@ -11,11 +11,12 @@ var httpStatus = require('http-status');
 const APIError = require('./tools/APIError');
 var sessionParser = require('./sessionMiddleware').sessionParser;
 var mongoose = require('mongoose');
+mongoose.set('debug', true);
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var docsRouter = require('./routes/docs');
-
+var _ = require('lodash');
 var app = express();
 var server = http.createServer(app);
 
@@ -54,19 +55,26 @@ server.on('upgrade', (request, socket, head) => {
   }
 });
 
-// if error is not an instanceOf APIError, convert it.
-app.use((err, req, res, next) => {
-  if (!(err instanceof APIError)) {
-    const apiError = new APIError(err.message, err.status);
-    return next(apiError);
-  }
-  return next(err);
-});
-
 // catch 404 and forward to error handler
 app.use((req, res, next) => {
   const err = new APIError(`API not found ${req.originalUrl}`, httpStatus.NOT_FOUND);
   return next(err);
+});
+
+// if error is not an instanceOf APIError, convert it.
+app.use((err, req, res, next) => {
+  if (_.isError(err)) {
+    if (!(err instanceof APIError)) {
+      const apiError = new APIError(err.message, err.status);
+      return next(apiError);
+    }
+    return next(err);
+  } else {
+    return res.json({
+      code: 0,
+      Message: err.msg || {}
+    });
+  }
 });
 
 // error handler, send stacktrace only during development
@@ -78,21 +86,29 @@ app.use(function (err, req, res, next) { // eslint-disable-line no-unused-vars
   });
 });
 
-// error handler
-// app.use(function (err, req, res, next) {
-//   // set locals, only providing error in development
-//   res.locals.message = err.message;
-//   res.locals.error = req.app.get('env') === 'development' ? err : {};
+// app.use((err, req, res, next) => {
+//   if (!(err instanceof APIError)) {
+//     const apiError = new APIError(err.message, err.status);
+//     return next(apiError);
+//   }
+//   return next(err);
+// });
 
-//   // render the error page
-//   res.status(err.status || 404);
-//   return res.status(400).send({
+// // catch 404 and forward to error handler
+// app.use((req, res, next) => {
+//   const err = new APIError(`API not found ${req.originalUrl}`, httpStatus.NOT_FOUND);
+//   return next(err);
+// });
+
+// // error handler, send stacktrace only during development
+// app.use(function (err, req, res, next) { // eslint-disable-line no-unused-vars
+//   return res.status(err.status).json({
 //     code: 4,
-//     Message: {
-//       err: 'not found'
-//     }
+//     Message: err.message,
+//     stack: err.stack
 //   });
 // });
+
 
 function start() {
   app.set('port', 5000);
