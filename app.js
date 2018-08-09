@@ -6,10 +6,12 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var session = require('express-session');
 var url = require('url');
+var util = require('util');
 
 var httpStatus = require('http-status');
 const APIError = require('./tools/APIError');
-var sessionParser = require('./sessionMiddleware').sessionParser;
+var sessionParser = require('./sessionMiddleware')
+	.sessionParser;
 var mongoose = require('mongoose');
 mongoose.set('debug', true);
 
@@ -26,7 +28,7 @@ app.use(sessionParser);
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({
-  extended: false
+	extended: false
 }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -40,50 +42,60 @@ var wssShareDB = require('./shareDBServer')(server);
 var wssChat = require('./chatServer')(server);
 
 server.on('upgrade', (request, socket, head) => {
-  const pathname = url.parse(request.url).pathname;
+	const pathname = url.parse(request.url)
+		.pathname;
 
-  if (pathname === '/sharedb') {
-    wssShareDB.handleUpgrade(request, socket, head, (ws, req) => {
-      wssShareDB.emit('connection', ws), req;
-    });
-  } else if (pathname === '/chat') {
-    wssChat.handleUpgrade(request, socket, head, (ws, req) => {
-      wssChat.emit('connection', ws, req);
-    });
-  } else {
-    socket.destroy();
-  }
+	if (pathname === '/sharedb') {
+		wssShareDB.handleUpgrade(request, socket, head, (ws, req) => {
+			wssShareDB.emit('connection', ws), req;
+		});
+	} else if (pathname === '/chat') {
+		wssChat.handleUpgrade(request, socket, head, (ws, req) => {
+			wssChat.emit('connection', ws, req);
+		});
+	} else {
+		socket.destroy();
+	}
 });
 
 // catch 404 and forward to error handler
 app.use((req, res, next) => {
-  const err = new APIError(`API not found ${req.originalUrl}`, httpStatus.NOT_FOUND);
-  return next(err);
+	const err = new APIError(`API not found ${req.originalUrl}`, httpStatus.NOT_FOUND);
+	return next(err);
 });
 
 // if error is not an instanceOf APIError, convert it.
 app.use((err, req, res, next) => {
-  if (_.isError(err)) {
-    if (!(err instanceof APIError)) {
-      const apiError = new APIError(err.message, err.status);
-      return next(apiError);
-    }
-    return next(err);
-  } else {
-    return res.json({
-      code: 0,
-      Message: err.msg || {}
-    });
-  }
+	if (_.isError(err)) {
+		// 有可能是express-validator的抛出错误
+		if (!(err instanceof APIError)) {
+			if (_.isArray(err.array())) {
+				return res.status(422)
+					.json({
+						code: 4,
+						Message: err.array()
+					});
+			}
+			const apiError = new APIError(err.message, err.status);
+			return next(apiError);
+		}
+		return next(err);
+	} else {
+		return res.json({
+			code: 0,
+			Message: err.msg || {}
+		});
+	}
 });
 
 // error handler, send stacktrace only during development
-app.use(function (err, req, res, next) { // eslint-disable-line no-unused-vars
-  return res.status(err.status).json({
-    code: 4,
-    Message: err.message,
-    stack: err.stack
-  });
+app.use(function(err, req, res, next) { // eslint-disable-line no-unused-vars
+	return res.status(err.status)
+		.json({
+			code: 4,
+			Message: err.message,
+			stack: err.stack
+		});
 });
 
 // app.use((err, req, res, next) => {
@@ -109,21 +121,22 @@ app.use(function (err, req, res, next) { // eslint-disable-line no-unused-vars
 //   });
 // });
 
-
 function start() {
-  app.set('port', 5000);
-  mongoose.connect('mongodb://db:27017/userdoc').then(function () {
-    console.log('MongoDB is connected')
-  }).catch(function (err) {
-    console.log(err);
-    console.log('MongoDB connection down');
-  });
-  server.listen(5000);
-  console.log('Listening on http://localhost:5000');
+	app.set('port', 5000);
+	mongoose.connect('mongodb://db:27017/userdoc')
+		.then(function() {
+			console.log('MongoDB is connected')
+		})
+		.catch(function(err) {
+			console.log(err);
+			console.log('MongoDB connection down');
+		});
+	server.listen(5000);
+	console.log('Listening on http://localhost:5000');
 }
 
 if (!module.parent) {
-  start();
+	start();
 } else {
-  module.exports = app;
+	module.exports = app;
 }

@@ -2,25 +2,23 @@ var express = require('express');
 var router = express.Router();
 const auth = require('../auth/index');
 const userCtrl = require('../controllers/user');
-
-
-
+const { checkSchema } = require('express-validator/check');
+const userValidateSchema = require('./userValidateSchema');
 /* GET users listing. */
-router.get('/users', auth.checkLogin, userCtrl.getUsers);
+router.get('/users', auth.checkLogin, checkSchema(userValidateSchema.getUsers), userCtrl.getUsers);
 
 /* GET user  */
-router.get('/user', auth.checkLogin, userCtrl.getUser);
+router.get('/user', auth.checkLogin, checkSchema(userValidateSchema.getUser), userCtrl.getUser);
 
 // login
-router.post('/login', auth.checkNotLogin, userCtrl.login);
+router.post('/login', auth.checkNotLogin, checkSchema(userValidateSchema.login), userCtrl.login);
 
 // register
-router.post('/reg', auth.checkNotLogin, userCtrl.reg);
+router.post('/reg', auth.checkNotLogin, checkSchema(userValidateSchema.reg), userCtrl.reg);
 
 // update
-router.put('/user', auth.checkLogin, userCtrl.update);
+router.put('/user', auth.checkLogin, checkSchema(userValidateSchema.update), userCtrl.update);
 
 router.get('/logout', auth.checkLogin, userCtrl.logout);
-
 
 module.exports = router;
