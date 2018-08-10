@@ -46,12 +46,14 @@ server.on('upgrade', (request, socket, head) => {
 		.pathname;
 
 	if (pathname === '/sharedb') {
-		wssShareDB.handleUpgrade(request, socket, head, (ws, req) => {
-			wssShareDB.emit('connection', ws), req;
+		wssShareDB.handleUpgrade(request, socket, head, (ws) => {
+			// 必须传递req
+			wssShareDB.emit('connection', ws, request);
 		});
 	} else if (pathname === '/chat') {
-		wssChat.handleUpgrade(request, socket, head, (ws, req) => {
-			wssChat.emit('connection', ws, req);
+		wssChat.handleUpgrade(request, socket, head, (ws) => {
+			// 必须传递req
+			wssChat.emit('connection', ws, request);
 		});
 	} else {
 		socket.destroy();
@@ -97,29 +99,6 @@ app.use(function(err, req, res, next) { // eslint-disable-line no-unused-vars
 			stack: err.stack
 		});
 });
-
-// app.use((err, req, res, next) => {
-//   if (!(err instanceof APIError)) {
-//     const apiError = new APIError(err.message, err.status);
-//     return next(apiError);
-//   }
-//   return next(err);
-// });
-
-// // catch 404 and forward to error handler
-// app.use((req, res, next) => {
-//   const err = new APIError(`API not found ${req.originalUrl}`, httpStatus.NOT_FOUND);
-//   return next(err);
-// });
-
-// // error handler, send stacktrace only during development
-// app.use(function (err, req, res, next) { // eslint-disable-line no-unused-vars
-//   return res.status(err.status).json({
-//     code: 4,
-//     Message: err.message,
-//     stack: err.stack
-//   });
-// });
 
 function start() {
 	app.set('port', 5000);

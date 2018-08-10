@@ -12,25 +12,92 @@ var db = require('./sharedocdb');
 var shareDBServer = new ShareDB({
 	db
 });
+var util = require('util');
 var uuid = require('uuid/v4');
 var debug = require('debug')('sharedb');
-// const shareDbAccess = require('sharedb-access');
-// shareDbAccess(shareDBServer);
 var sessionParser = require('./sessionMiddleware')
 	.sessionParser;
+// sharedb-access必须在listen中传入req。所以这样才能得到session,才能通过中间件解析session。	
+const shareDbAccess = require('sharedb-access');
+shareDbAccess(shareDBServer);
+// 注意，从1.0beta开始，不支持doc的中间件了,share-access可能会出错
+
+shareDBServer.allowCreate('office', async (docId, doc, session) => {
+	console.log('sharedb access create');
+	console.log(docId);
+	console.log(doc);
+	console.log(session);
+	return true;
+});
+shareDBServer.allowRead('office', async (docId, doc, session) => {
+	console.log('sharedb access read');
+	console.log(docId);
+	console.log(doc);
+	console.log(session);
+	return true;
+});
+shareDBServer.allowDelete('office', async (docId, doc, session) => {
+	console.log('sharedb access delete');
+	console.log(docId);
+	console.log(doc);
+	console.log(session);
+	return true;
+});
+shareDBServer.allowUpdate('office', async (docId, oldDoc, newDoc, session) => {
+	console.log('sharedb access update');
+	console.log(docId);
+	console.log(oldDoc);
+	console.log(newDoc);
+	console.log(session);
+	return true;
+});
+shareDBServer.use('connect', function(request, next) {
+	console.log('sharedb on connnect');
+	// console.log(util.inspect(request, {
+	// 	depth: 2
+	// }));
+	// console.log(util.inspect(request.req, {
+	// 	depth: 2
+	// }));
+	console.log('sharedb Parsing session from request...');
+	sessionParser(request.req, {}, () => {
+		console.log('sharedb Session is parsed!');
+		//
+		// 这里保存到agent.connectSession
+		request.agent.connectSession = request.req.session;
+		next();
+	});
+	// next();
+});
+shareDBServer.use('query', function(request, next) {
+	console.log('sharedb on query');
+	// console.log(util.inspect(request, {
+	// 	depth: 2
+	// }));
+	next();
+});
+shareDBServer.use('readSnapshots', function(request, next) {
+	console.log('sharedb on readSnapshots');
+	// console.log(util.inspect(request, {
+	// 	depth: 2
+	// }));
+	// console.log(util.inspect(request.agent.connectSession, {depth: 4}));
+	next();
+});
+
 module.exports = function(server) {
 	var wss = new WebSocket.Server({
-		// verifyClient: (info, done) => {
-		//     console.log('Parsing session from request...');
-		//     sessionParser(info.req, {}, () => {
-		//         console.log('Session is parsed!');
-		//         //
-		//         // We can reject the connection by returning false to done(). For example,
-		//         // reject here if user is unknown.
-		//         //
-		//         done(info.req.session);
-		//     });
-		// },
+		verifyClient: (info, done) => {
+			console.log('Parsing session from request...');
+			sessionParser(info.req, {}, () => {
+				console.log('Session is parsed!');
+				//
+				// We can reject the connection by returning false to done(). For example,
+				// reject here if user is unknown.
+				//
+				done(info.req.session);
+			});
+		},
 		noServer: true
 	});
 
@@ -41,9 +108,11 @@ module.exports = function(server) {
 		ws.isAlive = true;
 
 		debug('A new client (%s) connected.', ws.id);
-
 		var stream = new WebSocketJSONStream(ws);
-		shareDBServer.listen(stream);
+		// 可以在这里传递req进入shareDBServer，然后在他的中间件中应该可以得到req
+		// console.log('wss on connection');
+		// console.log(req);
+		shareDBServer.listen(stream, req);
 
 		ws.on('pong', function(data, flags) {
 			debug('Pong received. (%s)', ws.id);

@@ -1,26 +1,42 @@
 const getDocOps = {
-	collection: { in: ['query'] },
+	collection: { in: ['query']
+	},
 	documentId: { in: ['query'],
 		isLength: {
-			options: { min: 2, max: 50 }
+			options: {
+				min: 2,
+				max: 50
+			}
 		}
 	},
 	from: { in: ['query'],
-		isInt: true,
+		isInt: {
+			options: {
+				min: 1
+			}
+		},
 		toInt: true,
-		min: 1
+
 	},
 	to: { in: ['query'],
-		isInt: true,
+		isInt: {
+			options: {
+				min: 1
+			}
+		},
 		toInt: true,
-		min: 1
+
 	}
 };
 const getSnapshots = {
-	collection: { in: ['query'] },
+	collection: { in: ['query']
+	},
 	documentId: { in: ['query'],
 		isLength: {
-			options: { min: 2, max: 50 }
+			options: {
+				min: 2,
+				max: 50
+			}
 		}
 	}
 };
