@@ -41,8 +41,22 @@ const UserSchema = new Schema({
 		default: Date.now
 	},
 	docs: [{
-		type: Schema.Types.ObjectId,
-		ref: 'Doc'
+		item: {
+			type: Schema.Types.ObjectId,
+			ref: 'Doc'
+		},
+		star: {
+			type: Number,
+			default: 0
+		},
+		role: {
+			type: Number,
+			default: 0
+		},
+		status: {
+			type: Number,
+			default: 0
+		}
     }]
 });
 UserSchema.path('name')

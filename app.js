@@ -5,6 +5,7 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var session = require('express-session');
+var favicon = require('serve-favicon');
 var url = require('url');
 var util = require('util');
 
@@ -31,6 +32,7 @@ app.use(express.urlencoded({
 	extended: false
 }));
 app.use(cookieParser());
+app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/v1/', indexRouter);
@@ -38,8 +40,8 @@ app.use('/api/v1/', usersRouter);
 app.use('/api/v1/', docsRouter);
 
 // init websockets servers
-var wssShareDB = require('./shareDBServer')(server);
-var wssChat = require('./chatServer')(server);
+var wssShareDB = require('./shareDBServer').wss;
+var wssChat = require('./chatServer').wss;
 
 server.on('upgrade', (request, socket, head) => {
 	const pathname = url.parse(request.url)
@@ -69,6 +71,7 @@ app.use((req, res, next) => {
 // if error is not an instanceOf APIError, convert it.
 app.use((err, req, res, next) => {
 	if (_.isError(err)) {
+		console.log(err);
 		// 有可能是express-validator的抛出错误
 		if (!(err instanceof APIError)) {
 			if (_.isArray(err.array())) {

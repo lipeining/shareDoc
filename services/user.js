@@ -1,9 +1,11 @@
 const User = require('../models/user');
+const Doc = require('../models/doc');
 module.exports = {
 	login,
 	reg,
 	getUsers,
-	getUser,
+	getUserById,
+	getUserTest,
 	update
 };
 
@@ -27,9 +29,41 @@ async function getUsers(options) {
  * @param {*} options
  * @returns
  */
-async function getUser(options) {
-	let user = await User.findById(options.id);
-	return user;
+async function getUserById(options) {
+	return  await User.findById(options.id);
+}
+
+
+/**
+ *
+ *
+ * @param {*} options
+ * @returns
+ */
+async function getUserTest(options) {
+	let user = await User.findById(options.id)
+		.populate('docs.item');
+	let user2 = await User.findById(options.id)
+		.populate({
+			path: 'docs.item',
+			populate: {
+				path: 'users.item'
+			}
+		});
+	let user3 = await User.findById(options.id)
+		.populate({
+			path: 'docs.item',
+			model: Doc,
+			populate: {
+				path: 'users.item',
+				model: User
+			}
+		});
+	return {
+		user,
+		user2,
+		user3
+	};
 }
 
 /**
@@ -39,7 +73,10 @@ async function getUser(options) {
  * @returns
  */
 async function login(options) {
-	return await User.findOne(options);
+	return await User.findOne(options)
+		.populate({
+			path: 'docs.item'
+		});
 }
 
 /**

@@ -1,15 +1,143 @@
 var db = require('../sharedocdb');
-
+const shareDBServer = require('../shareDBServer')
+	.shareDBServer;
+const Doc = require('../models/doc');
+const User = require('../models/user');
+const userService = require('./user');
 module.exports = {
+	createDoc,
+	addDocUser,
+	getDocById,
+	getDocTest,
 	getDocOps,
 	getSnapshots
 };
 
 /**
-//  *
+ *
+ *
+ * @param {*} user
+ * @param {*} options
+ * @param {String} options.collectionName
+ * @param {String} options.documentId
+ * @returns
+ */
+async function createDoc(user, options) {
+	let item = await Doc.create(options);
+	console.log(item);
+	let doc = {
+		item: item,
+		star: 1
+	};
+	let userInstance = await userService.getUserById({
+		id: user._id
+	});
+	await userInstance.docs.push(doc);
+	await userInstance.save();
+	// 只有在需要的时候，连接服务器.
+	let shareConnection = shareDBServer.connect();
+	let storeDoc = shareConnection.get(options.collectionName, options.documentId);
+	storeDoc.create([], 'rich-text');
+	// if (!storeDoc.type)
+	// 	storeDoc.create([], 'rich-text');
+	return await item;
+}
+
+/**
+ *
+ *
+ * @param {*} user
+ * @param {*} options
+ * @param {String} options.userId
+ * @param {String} options.docId
+ * @returns
+ */
+async function addDocUser(user, options) {
+	// check user permission
+	let userInstance = await userService.getUserById({
+		id: options.userId
+	});
+	let docInstance = await getDocById({
+		id: options.docId
+	});
+	let star = 1;
+	let itemDoc = {
+		item: docInstance,
+		star: star
+	};
+	let itemUser = {
+		item: userInstance,
+		star: star
+	};
+	await userInstance.docs.push(itemDoc);
+	await userInstance.save();
+	await docInstance.users.push(itemUser);
+	await docInstance.save();
+	return await {};
+}
+
+/**
+ *
  *
  * @param {*} options
- * @param {String} options.collection
+ * @param {*} options.docId
+ * @returns
+ */
+async function getDocById(options) {
+	// 可以获取对应的doc
+	// check permission?
+	return await Doc.findById(options.id)
+		.populate({
+			path: 'users.item'
+		});
+}
+
+/**
+ *
+ *
+ * @param {*} user
+ * @param {*} options
+ * @param {Int} options.id
+ * @returns
+ */
+async function getDocTest(user, options) {
+	// 可以获取对应的docs列表
+	let doc1 = await Doc.findById(options.id)
+		.populate('users.item');
+	// console.log(doc1.creator);
+	// console.log(doc1.users[0].item);// 这是一个对象
+	// console.log(user._id);
+	let doc2 = await Doc.findById(options.id)
+		.populate({
+			path: 'users.item',
+			populate: {
+				path: 'docs.item'
+			}
+		});
+	// console.log(doc2.creator);
+	// console.log(doc2.users[0].item._id);
+	// console.log(user._id);
+	let doc3 = await Doc.findById(options.id)
+		.populate({
+			path: 'users.item',
+			model: User,
+			populate: {
+				path: 'docs.item',
+				model: Doc
+			}
+		});
+	return {
+		doc1,
+		doc2,
+		doc3
+	};
+}
+
+/**
+ *
+ *
+ * @param {*} options
+ * @param {String} options.collectionName
  * @param {String} options.documentId
  * @param {Int} options.from
  * @param {Int} options.to
@@ -25,12 +153,15 @@ async function getDocOps(options) {
 	let from = 1;
 	let to = snapshots.v;
 	return new Promise(function(resolve, reject) {
-		db.getOps(options.collection, options.documentId, from, to, {},
+		db.getOps(options.collectionName, options.documentId, from, to, {},
 			function(err, ops) {
 				if (err) {
 					reject(err);
 				} else {
-					resolve({ ops: ops, total: maxV });
+					resolve({
+						ops: ops,
+						total: maxV
+					});
 				}
 			});
 	});
@@ -38,7 +169,7 @@ async function getDocOps(options) {
 
 /**
  *
- * @param {String} options.collection
+ * @param {String} options.collectionName
  * @param {String} options.documentId
  * @param {Int} options.getOps // 是否返回ops数组
  * @returns
@@ -46,7 +177,11 @@ async function getDocOps(options) {
 async function getSnapshots(options) {
 	// 可以获取对应的snapshots
 	return new Promise(function(resolve, reject) {
-		db.getSnapshot(options.collection, options.documentId, { ops: options.getOps ? 1 : 0 }, { metadata: 1 },
+		db.getSnapshot(options.collectionName, options.documentId, {
+				ops: options.getOps ? 1 : 0
+			}, {
+				metadata: 1
+			},
 			function(err, snapshots) {
 				if (err) {
 					reject(err);
@@ -59,13 +194,13 @@ async function getSnapshots(options) {
 
 /**
  *
- * @param {String} options.collection 
+ * @param {String} options.collectionName 
  * @returns {Promise}
  */
 async function getCollection(options) {
 	// 可以获取对应的snapshots
 	return new Promise(function(resolve, reject) {
-		db.getCollection(options.collection,
+		db.getCollection(options.collectionName,
 			function(err, collection) {
 				if (err) {
 					reject(err);
@@ -80,7 +215,7 @@ async function getCollection(options) {
 //     "_id": documentId,
 // };
 //  // 查询文档的内容
-//   db.query(collection, query, {}, {}, function (err, snapshots, extra) {
+//   db.query(collectionName, query, {}, {}, function (err, snapshots, extra) {
 //     if (err) {
 //       console.log(err);
 //       return res.json({

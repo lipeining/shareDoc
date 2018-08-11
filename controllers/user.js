@@ -2,10 +2,12 @@ const userService = require('../services/user');
 const APIError = require('../tools/APIError');
 const ErrorHanlder = require('../tools/error-handler');
 const { validationResult } = require('express-validator/check');
+const userMapSession = require('../mapper').userMapSession;
 
 module.exports = ErrorHanlder({
 	getUsers,
 	getUser,
+	getUserMap,
 	login,
 	reg,
 	update,
@@ -23,11 +25,9 @@ module.exports = ErrorHanlder({
 async function getUsers(req, res, next) {
 	validationResult(req)
 		.throw();
-	let pageIndex = req.query.pageIndex || 1;
-	let pageSize = req.query.pageSize || 10;
 	let options = {
-		pageIndex: pageIndex,
-		pageSize: pageSize,
+		pageIndex: req.query.pageIndex || 1,
+		pageSize: req.query.pageSize || 10,
 		search: req.query.search || ''
 	};
 	let users = await userService.getUsers(options);
@@ -38,9 +38,23 @@ async function getUsers(req, res, next) {
 	});
 }
 
+/**
+ *
+ *
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns
+ */
 async function getUser(req, res, next) {
 	validationResult(req)
 		.throw();
+	let user =  await userService.getUserTest({id: req.query.id});
+	return next({
+		msg: {
+			user: user
+		}
+	});
 	// throw new APIError('in test throw an error', 401);
 	// return next(new APIError('in test next an error', 400));
 	// let options = {
@@ -61,6 +75,22 @@ async function getUser(req, res, next) {
  * @param {*} next
  * @returns
  */
+async function getUserMap(req, res, next){
+	let str = '';
+	for (let [key, value] of userMapSession.entries()) {
+		str += `${key}  =  ${value} \n`;
+	}
+	return next({msg: str});
+}
+
+/**
+ *
+ *
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns
+ */
 async function login(req, res, next) {
 	validationResult(req)
 		.throw();
@@ -71,6 +101,8 @@ async function login(req, res, next) {
 	let user = await userService.login(options);
 	user.password = '';
 	req.session.user = user;
+	// here 添加user map session
+	userMapSession.append(user.name, req.session.id);
 	if (user) {
 		return next({
 			msg: {
@@ -144,6 +176,7 @@ async function update(req, res, next) {
  * @returns
  */
 async function logout(req, res, next) {
+	userMapSession.remove(req.session.user.name, req.session.id);
 	req.session.destroy();
 	console.log('session destroy');
 	return res.json({});

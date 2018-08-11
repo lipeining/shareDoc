@@ -1,5 +1,51 @@
+const createDoc = {
+	collectionName: { in: ['body'],
+		isLength: {
+			options: {
+				min: 2,
+				max: 50
+			}
+		}
+	},
+	documentId: { in: ['body'],
+		isLength: {
+			options: {
+				min: 2,
+				max: 50
+			}
+		}
+	},
+};
+const addDocUser = {
+	docId: { in: ['body']
+	},
+	userId: { in: ['body']
+	}
+};
+const getDoc = {
+	id: { in: ['query']
+	}
+};
+const getDocs = {
+	pageIndex: { in: ['query'],
+		isInt: {
+			options: {
+				min: 1
+			}
+		},
+		toInt: true
+	},
+	pageSize: { in: ['query'],
+		isInt: {
+			options: {
+				min: 1
+			}
+		},
+		toInt: true
+	}
+};
 const getDocOps = {
-	collection: { in: ['query']
+	collectionName: { in: ['query']
 	},
 	documentId: { in: ['query'],
 		isLength: {
@@ -29,7 +75,7 @@ const getDocOps = {
 	}
 };
 const getSnapshots = {
-	collection: { in: ['query']
+	collectionName: { in: ['query']
 	},
 	documentId: { in: ['query'],
 		isLength: {
@@ -42,6 +88,10 @@ const getSnapshots = {
 };
 
 module.exports = {
+	createDoc: createDoc,
+	addDocUser: addDocUser,
+	getDocs: getDocs,
+	getDoc: getDoc,
 	getDocOps: getDocOps,
 	getSnapshots: getSnapshots
 };

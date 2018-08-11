@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const DocSchema = new Schema({
-	collection: {
+	collectionName: {
 		type: String,
 		minlength: 2,
 		maxlength: 50,
@@ -12,6 +12,10 @@ const DocSchema = new Schema({
 		minlength: 2,
 		maxlength: 50,
 		default: ''
+	},
+	type: {
+		type: Number,
+		default: 0
 	},
 	star: {
 		type: Number,
@@ -30,8 +34,22 @@ const DocSchema = new Schema({
 		default: Date.now
 	},
 	users: [{
-		type: Schema.Types.ObjectId,
-		ref: 'User'
+		item: {
+			type: Schema.Types.ObjectId,
+			ref: 'User'
+		},
+		star: {
+			type: Number,
+			default: 0
+		},
+		role: {
+			type: Number,
+			default: 0
+		},
+		status: {
+			type: Number,
+			default: 0
+		}
     }]
 });
 const Doc = mongoose.model('Doc', DocSchema);

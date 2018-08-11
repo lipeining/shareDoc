@@ -7,9 +7,7 @@ const getUsers = {
 	}
 };
 const getUser = {
-	id: { in: ['query'],
-		isInt: true,
-		toInt: true
+	id: { in: ['query']
 	}
 };
 const login = {

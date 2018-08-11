@@ -8,7 +8,10 @@ const userValidateSchema = require('./userValidateSchema');
 router.get('/users', auth.checkLogin, checkSchema(userValidateSchema.getUsers), userCtrl.getUsers);
 
 /* GET user  */
-router.get('/user', auth.checkLogin, checkSchema(userValidateSchema.getUser), userCtrl.getUser);
+router.get('/user', checkSchema(userValidateSchema.getUser), userCtrl.getUser);
+
+/* GET user  map*/
+router.get('/user/map', userCtrl.getUserMap);
 
 // login
 router.post('/login', auth.checkNotLogin, checkSchema(userValidateSchema.login), userCtrl.login);
