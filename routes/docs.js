@@ -17,4 +17,7 @@ router.get('/doc/ops', auth.checkLogin,
 	checkSchema(docValidateSchema.getDocOps), docCtrl.getDocOps);
 router.get('/doc/snapshots', auth.checkLogin,
 	checkSchema(docValidateSchema.getSnapshots), docCtrl.getSnapshots);
+/* GET docs list for add doc user. */
+router.get('/docs/name', auth.checkLogin, checkSchema(docValidateSchema.getMyDocNames), docCtrl.getMyDocNames);
+
 module.exports = router;

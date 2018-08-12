@@ -7,6 +7,7 @@ const userService = require('./user');
 module.exports = {
 	createDoc,
 	addDocUser,
+	getMyDocNames,
 	getDocById,
 	getDocTest,
 	getDocOps,
@@ -61,13 +62,16 @@ async function addDocUser(user, options) {
 		id: options.docId
 	});
 	let star = 1;
+	let role = 1;
 	let itemDoc = {
 		item: docInstance,
-		star: star
+		star: star,
+		role: role
 	};
 	let itemUser = {
 		item: userInstance,
-		star: star
+		star: star,
+		role: role
 	};
 	await userInstance.docs.push(itemDoc);
 	await userInstance.save();
@@ -132,6 +136,19 @@ async function getDocTest(user, options) {
 		doc3
 	};
 }
+
+/**
+ *
+ *
+ * @param {*} user
+ * @param {*} options
+ * @returns
+ */
+async function getMyDocNames(user, options){
+	let docs = await Doc.find({creator: user._id}).select({documentId: 1, collection: 1});
+	return await docs;
+}
+
 
 /**
  *

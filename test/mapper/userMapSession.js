@@ -13,8 +13,8 @@ describe('Test user map session ', function() {
 		console.log(keys);
 	});
 	it(' User Map Session set and get user1 session1 ', async () => {
-		userMapSession.set(user1, session1[0]);
-		userMapSession.set(user2, session2[0]);
+		userMapSession.set(user1, [session1[0]]);
+		userMapSession.set(user2, [session2[0]]);
 		let get1 = userMapSession.get(user1);
 		let get2 = userMapSession.get(user2);
 		for (let i = 0; i < get1.length; i++) {
@@ -25,21 +25,15 @@ describe('Test user map session ', function() {
 		}
 	});
 	it(' User Map Session entries ', async () => {
-		for (let [key, value] of userMapSession.entries()) {
-			console.log(key + " = " + value);
-		}
+		console.log(userMapSession.entries());
 	});
 	it(' User Map Session append user1 session1 user2 session2', async () => {
 		console.log('before delete');
-		for (let [key, value] of userMapSession.entries()) {
-			console.log(key + " = " + value);
-		}
+		console.log(userMapSession.entries());
 		userMapSession.delete(user1);
 		userMapSession.delete(user2);
 		console.log('after delete');
-		for (let [key, value] of userMapSession.entries()) {
-			console.log(key + " = " + value);
-		}
+		console.log(userMapSession.entries());
 		for (let i = 0; i < session1.length; i++) {
 			userMapSession.append(user1, session1[i]);
 		}
@@ -47,9 +41,7 @@ describe('Test user map session ', function() {
 			userMapSession.append(user2, session2[i]);
 		}
 		console.log('after append');
-		for (let [key, value] of userMapSession.entries()) {
-			console.log(key + " = " + value);
-		}
+		console.log(userMapSession.entries());
 		let get1 = userMapSession.get(user1);
 		let get2 = userMapSession.get(user2);
 		for (let i = 0; i < get1.length; i++) {
@@ -61,15 +53,11 @@ describe('Test user map session ', function() {
 	});
 	it(' User Map Session set to ingore origin session string ', async () => {
 		console.log('before set');
-		for (let [key, value] of userMapSession.entries()) {
-			console.log(key + " = " + value);
-		}
-		userMapSession.set(user1, session1[0]);
-		userMapSession.set(user2, session2[0]);
+		console.log(userMapSession.entries());
+		userMapSession.set(user1, [session1[0]]);
+		userMapSession.set(user2, [session2[0]]);
 		console.log('after set');
-		for (let [key, value] of userMapSession.entries()) {
-			console.log(key + " = " + value);
-		}
+		console.log(userMapSession.entries());
 		let get1 = userMapSession.get(user1);
 		let get2 = userMapSession.get(user2);
 		for (let i = 0; i < get1.length; i++) {
@@ -81,15 +69,11 @@ describe('Test user map session ', function() {
 	});
 	it(' User Map Session unshift user1 session1 user2 session2', async () => {
 		console.log('before delete');
-		for (let [key, value] of userMapSession.entries()) {
-			console.log(key + " = " + value);
-		}
+		console.log(userMapSession.entries());
 		userMapSession.delete(user1);
 		userMapSession.delete(user2);
 		console.log('after delete');
-		for (let [key, value] of userMapSession.entries()) {
-			console.log(key + " = " + value);
-		}
+		console.log(userMapSession.entries());
 		for (let i = 0; i < session1.length; i++) {
 			userMapSession.unshift(user1, session1[i]);
 		}
@@ -97,9 +81,7 @@ describe('Test user map session ', function() {
 			userMapSession.unshift(user2, session2[i]);
 		}
 		console.log('after unshift');
-		for (let [key, value] of userMapSession.entries()) {
-			console.log(key + " = " + value);
-		}
+		console.log(userMapSession.entries());
 		let get1 = userMapSession.get(user1);
 		let get2 = userMapSession.get(user2);
 		let len1 = session1.length;
@@ -113,15 +95,11 @@ describe('Test user map session ', function() {
 	});
 	it(' User Map Session remove user1 session1 user2 session2', async () => {
 		console.log('before delete');
-		for (let [key, value] of userMapSession.entries()) {
-			console.log(key + " = " + value);
-		}
+		console.log(userMapSession.entries());
 		userMapSession.delete(user1);
 		userMapSession.delete(user2);
 		console.log('after delete');
-		for (let [key, value] of userMapSession.entries()) {
-			console.log(key + " = " + value);
-		}
+		console.log(userMapSession.entries());
 		for (let i = 0; i < session1.length; i++) {
 			userMapSession.append(user1, session1[i]);
 		}
@@ -129,15 +107,11 @@ describe('Test user map session ', function() {
 			userMapSession.append(user2, session2[i]);
 		}
 		console.log('after append');
-		for (let [key, value] of userMapSession.entries()) {
-			console.log(key + " = " + value);
-		}
+		console.log(userMapSession.entries());
 		userMapSession.remove(user1, session1[0]);
         userMapSession.remove(user2, session2[0]);
         console.log('after remove');
-		for (let [key, value] of userMapSession.entries()) {
-			console.log(key + " = " + value);
-		}
+		console.log(userMapSession.entries());
 		let get1 = userMapSession.get(user1);
 		let get2 = userMapSession.get(user2);
 		for (let i = 0; i < get1.length; i++) {
