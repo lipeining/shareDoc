@@ -22,6 +22,9 @@ const addDocUser = {
 	userId: { in: ['body']
 	}
 };
+const getMyDocNames = {
+
+};
 const getDoc = {
 	id: { in: ['query']
 	}
@@ -90,6 +93,7 @@ const getSnapshots = {
 module.exports = {
 	createDoc: createDoc,
 	addDocUser: addDocUser,
+	getMyDocNames: getMyDocNames,
 	getDocs: getDocs,
 	getDoc: getDoc,
 	getDocOps: getDocOps,

@@ -6,6 +6,9 @@ const getUsers = {
 		toInt: true
 	}
 };
+const getUserNames = {
+
+};
 const getUser = {
 	id: { in: ['query']
 	}
@@ -62,6 +65,7 @@ const update = {
 };
 module.exports = {
 	getUsers: getUsers,
+	getUserNames: getUserNames,
 	getUser: getUser,
 	login: login,
 	reg: reg,

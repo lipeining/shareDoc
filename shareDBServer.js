@@ -69,8 +69,46 @@ var sessionParser = require('./sessionMiddleware')
 // 	console.log(session);
 // 	return true;
 // });
-// 如果是服务器node使用的话，不会有session。
 
+/**
+ *
+ *
+ * @param {*} request
+ * @returns {Boolean} 
+ */
+function checkUserDocPermission(request) {
+	if(!request.agent.connectSession) {
+		// in node no session just return true
+		return true;
+	} else {
+		let user = request.agent.connectSession.user;
+		if(!user){
+			// not login
+			return false;
+		}
+		let collectionName = request.collection;
+		let documentId = request.id;
+		let action = request.action;
+		if(action=="readSnapshots"){
+			// get documentId from the snapshots
+			documentId = request.snapshots[0].id;
+		}
+		let docs = user.docs;
+		// console.log(docs);
+		console.log(collectionName);
+		console.log(documentId);
+		for(let doc of docs){
+			if(doc.item.documentId==documentId && doc.item.collectionName==collectionName){
+				return true;
+			}
+		}
+		//no doc map the permission
+		return false;
+	}
+}
+// no need to send back the error message the next('message') help us!
+// if you want to send message ,use Object ,not string!
+// 如果是服务器node使用的话，不会有session。
 shareDBServer.use('connect', function(request, next) {
 	console.log('sharedb on connnect');
 	// console.log(util.inspect(request, {
@@ -86,7 +124,15 @@ shareDBServer.use('connect', function(request, next) {
 			console.log('sharedb Session is parsed!');
 			//
 			// 这里保存到agent.connectSession
+			// i do  know  it is unable to access collection
+			// i do  know  it is unable to access id
 			request.agent.connectSession = request.req.session;
+			// console.log(`on ${request.action}-start-`);
+			// console.log(request.collection);
+			// console.log(request.id);
+			// console.log(`on ${request.action}-end-`);
+			// console.log(request.agent.stream.ws);
+			// connect do not check permission
 			next();
 		});
 	} else {
@@ -100,8 +146,21 @@ shareDBServer.use('query', function(request, next) {
 	// 	depth: 2
 	// }));
 	// console.log(request.req.session);
-	console.log(request.agent.connectSession);
+	// console.log(request.agent.connectSession);
+	// next();
+	// i do not know whether it is able to access id
+	// console.log(`on ${request.action}-start-`);
+	// console.log(request.collection);
+	// console.log(request.id);
+	// console.log(`on ${request.action}-end-`);
 	next();
+	// if(checkUserDocPermission(request)){
+	// 	request.agent.stream.ws.send('query permission is ok');
+	// 	next();
+	// } else {
+	// 	request.agent.stream.ws.send('query permission is not ok');			
+	// 	next('no permission');
+	// }
 });
 shareDBServer.use('readSnapshots', function(request, next) {
 	console.log('sharedb on readSnapshots');
@@ -110,16 +169,25 @@ shareDBServer.use('readSnapshots', function(request, next) {
 	// }));
 	// console.log(util.inspect(request.agent.connectSession, {depth: 4}));
 	// console.log(request.req.session);
-	console.log(request.agent.connectSession);
-	// 无法这样读取collection方法
-	// shareDBServer.allowRead(request.collection, async (docId, doc, session) => {
-	// 	console.log('sharedb access read');
-	// 	console.log(docId);
-	// 	console.log(doc);
-	// 	console.log(session);
-	// 	return true;
-	// });
-	next();
+	// console.log(request.agent.connectSession);
+	// next();
+	// i do  know  it is able to access collection
+	// i do  know  it is unable to access id
+	// console.log(`on ${request.action}-start-`);
+	// console.log(request.collection);
+	// console.log(request.id);
+	// console.log(request.snapshots);
+	// console.log(request.snapshots.length);
+	// console.log(request.snapshots[0]);
+	// console.log(request.snapshots[0].id);
+	// console.log(`on ${request.action}-end-`);
+	// next();
+	if(checkUserDocPermission(request)){
+		next();
+	} else {
+		// request.agent.stream.ws.send('readSnapshots permission is not ok');			
+		next('no permission readSnapshots');
+	}
 });
 shareDBServer.use('op', function(request, next) {
 	console.log('sharedb on op');
@@ -128,8 +196,22 @@ shareDBServer.use('op', function(request, next) {
 	// }));
 	// console.log(util.inspect(request.agent.connectSession, {depth: 4}));
 	// console.log(request.req.session);
-	console.log(request.agent.connectSession);
+	// console.log(request.agent.connectSession);
+	// next();
+	// i do  know  it is able to access collection
+	// i do  know  it is able to access id
+	// console.log(`on ${request.action}-start-`);
+	// console.log(request.collection);
+	// console.log(request.id);
+	// console.log(`on ${request.action}-end-`);
 	next();
+	// no need to check op An operation was loaded from the database.
+	// if(checkUserDocPermission(request)){
+	// 	next();
+	// } else {
+	// 	request.agent.stream.ws.send('op permission is not ok');			
+	// 	next('no permission');
+	// }
 });
 shareDBServer.use('submit', function(request, next) {
 	console.log('sharedb on submit');
@@ -138,8 +220,22 @@ shareDBServer.use('submit', function(request, next) {
 	// }));
 	// console.log(util.inspect(request.agent.connectSession, {depth: 4}));
 	// console.log(request.req.session);
-	console.log(request.agent.connectSession);
-	next();
+	// console.log(request.agent.connectSession);
+	// next();
+	// i do  know  it is able to access collection
+	// i do  know  it is able to access id		
+	// console.log(`on ${request.action}-start-`);
+	// console.log(request.collection);
+	// console.log(request.id);
+	// console.log(`on ${request.action}-end-`);
+	// next();
+	// An operation is about to be submitted to the database
+	if(checkUserDocPermission(request)){
+		next();
+	} else {
+		// request.agent.stream.ws.send('submit permission is not ok');			
+		next('no permission submit');
+	}
 });
 shareDBServer.use('apply', function(request, next) {
 	console.log('sharedb on apply');
@@ -148,8 +244,38 @@ shareDBServer.use('apply', function(request, next) {
 	// }));
 	// console.log(util.inspect(request.agent.connectSession, {depth: 4}));
 	// console.log(request.req.session);
-	console.log(request.agent.connectSession);
-	next();
+	// console.log(request.agent.connectSession);
+	// next();
+	// i do  know  it is able to access collection
+	// i do  know  it is able to access id		
+	// console.log(`on ${request.action}-start-`);
+	// console.log(request.collection);
+	// console.log(request.id);
+	// console.log(`on ${request.action}-end-`);
+	// next();
+	// An operation is about to be applied to a snapshot before being committed to the database
+	if(checkUserDocPermission(request)){
+		next();
+	} else {
+		// request.agent.stream.ws.send('apply permission is not ok');			
+		next('no permission apply');
+	}
+});
+shareDBServer.use('commit', function(request, next) {
+	console.log('sharedb on commit');
+	// next();	
+	// console.log(`on ${request.action}-start-`);
+	// console.log(request.collection);
+	// console.log(request.id);
+	// console.log(`on ${request.action}-end-`);
+	// next();
+	// An operation was applied to a snapshot; The operation and new snapshot are about to be written to the database.
+	if(checkUserDocPermission(request)){
+		next();
+	} else {
+		// request.agent.stream.ws.send('commit permission is not ok');			
+		next('no permission commit');
+	}
 });
 shareDBServer.use('afterSubmit', function(request, next) {
 	console.log('sharedb on afterSubmit');
@@ -158,8 +284,22 @@ shareDBServer.use('afterSubmit', function(request, next) {
 	// }));
 	// console.log(util.inspect(request.agent.connectSession, {depth: 4}));
 	// console.log(request.req.session);
-	console.log(request.agent.connectSession);
+	// console.log(request.agent.connectSession);
+	// next();
+	// i do  know  it is able to access collection
+	// i do  know  it is able to access id		
+	// console.log(`on ${request.action}-start-`);
+	// console.log(request.collection);
+	// console.log(request.id);
+	// console.log(`on ${request.action}-end-`);
 	next();
+	// if(checkUserDocPermission(request)){
+	// 	request.agent.stream.ws.send('afterSubmit permission is ok');
+	// 	next();
+	// } else {
+	// 	request.agent.stream.ws.send('afterSubmit permission is not ok');			
+	// 	next('no permission');
+	// }
 });
 shareDBServer.use('receive', function(request, next) {
 	console.log('sharedb on receive');
@@ -168,8 +308,22 @@ shareDBServer.use('receive', function(request, next) {
 	// }));
 	// console.log(util.inspect(request.agent.connectSession, {depth: 4}));
 	// console.log(request.req.session);
-	console.log(request.agent.connectSession);
+	// console.log(request.agent.connectSession);
+	// next();
+	// i do  know  it is unable to access collection
+	// i do  know  it is unable to access id		
+	// console.log(`on ${request.action}-start-`);
+	// console.log(request.collection);
+	// console.log(request.id);
+	// console.log(`on ${request.action}-end-`);
 	next();
+	// if(checkUserDocPermission(request)){
+	// 	request.agent.stream.ws.send('receive permission is ok');
+	// 	next();
+	// } else {
+	// 	request.agent.stream.ws.send('receive permission is not ok');			
+	// 	next('no permission');
+	// }
 });
 
 var wss = new WebSocket.Server({

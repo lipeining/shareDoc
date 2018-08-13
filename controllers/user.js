@@ -3,11 +3,14 @@ const APIError = require('../tools/APIError');
 const ErrorHanlder = require('../tools/error-handler');
 const { validationResult } = require('express-validator/check');
 const userMapSession = require('../mapper').userMapSession;
+const sessionManager = require('../sessionManager');
 
 module.exports = ErrorHanlder({
 	getUsers,
+	getUserNames,
 	getUser,
 	getUserMap,
+	getUserSession,
 	login,
 	reg,
 	update,
@@ -38,6 +41,29 @@ async function getUsers(req, res, next) {
 	});
 }
 
+
+/**
+ *
+ *
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns
+ */
+async function getUserNames(req, res, next) {
+	validationResult(req)
+		.throw();
+	let options = {
+		search: req.query.search || ''
+	};
+	let users = await userService.getUserNames(options);
+	return next({
+		msg: {
+			users: users
+		}
+	});
+}
+
 /**
  *
  *
@@ -55,16 +81,6 @@ async function getUser(req, res, next) {
 			user: user
 		}
 	});
-	// throw new APIError('in test throw an error', 401);
-	// return next(new APIError('in test next an error', 400));
-	// let options = {
-	//     id: parseInt(req.query.id) || 0
-	// };
-
-	// let user = userService.getUser(options);
-	// return await returnMessage(res, {
-	//     user: user
-	// });
 }
 
 /**
@@ -76,11 +92,27 @@ async function getUser(req, res, next) {
  * @returns
  */
 async function getUserMap(req, res, next){
-	let str = '';
-	for (let [key, value] of userMapSession.entries()) {
-		str += `${key}  =  ${value} \n`;
-	}
+	let str = [...userMapSession.entries()];
+	console.log(userMapSession);
+	console.log(userMapSession.entries());
+	// for (let [key, value] of userMapSession.entries()) {
+	// 	str += `${key}  =  ${value} \n`;
+	// }
 	return next({msg: str});
+}
+
+
+/**
+ *
+ *
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns
+ */
+async function getUserSession(req, res, next){
+	let sessions = await sessionManager.getSession();
+	return next({msg: sessions});
 }
 
 /**
@@ -99,11 +131,15 @@ async function login(req, res, next) {
 		email: req.body.email || ''
 	};
 	let user = await userService.login(options);
-	user.password = '';
-	req.session.user = user;
-	// here 添加user map session
-	userMapSession.append(user.name, req.session.id);
 	if (user) {
+		user.password = '';
+		req.session.user = user;
+		req.session.save();
+		// here 添加user map session
+		console.log('login');
+		console.log(user._id);
+		console.log(typeof user._id); // Object
+		userMapSession.append(user._id.valueOf().toString(), req.session.id);
 		return next({
 			msg: {
 				user: user
@@ -176,7 +212,10 @@ async function update(req, res, next) {
  * @returns
  */
 async function logout(req, res, next) {
-	userMapSession.remove(req.session.user.name, req.session.id);
+	console.log('logout');
+	console.log(req.session.user._id);
+	console.log(typeof req.session.user._id); // String
+	userMapSession.remove(req.session.user._id, req.session.id);
 	req.session.destroy();
 	console.log('session destroy');
 	return res.json({});

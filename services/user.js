@@ -4,7 +4,9 @@ module.exports = {
 	login,
 	reg,
 	getUsers,
+	getUserNames,
 	getUserById,
+	getUserByIdWithDocs,
 	getUserTest,
 	update
 };
@@ -29,10 +31,31 @@ async function getUsers(options) {
  * @param {*} options
  * @returns
  */
+async function getUserNames(options) {
+	let users = await User.find().select({name: 1});
+	return users;
+}
+
+/**
+ *
+ *
+ * @param {*} options
+ * @returns
+ */
 async function getUserById(options) {
 	return  await User.findById(options.id);
 }
 
+
+/**
+ *
+ *
+ * @param {*} options
+ * @returns
+ */
+async function getUserByIdWithDocs(options) {
+	return  await User.findById(options.id).populate({path: 'docs.item'});
+}
 
 /**
  *

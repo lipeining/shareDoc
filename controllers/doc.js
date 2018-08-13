@@ -1,14 +1,17 @@
 const docService = require('../services/doc');
+const userService = require('../services/user');
 var util = require('util');
 const APIError = require('../tools/APIError');
 const ErrorHanlder = require('../tools/error-handler');
 const {
 	validationResult
 } = require('express-validator/check');
-
+const userMapSession = require('../mapper').userMapSession;
+const sessionManager = require('../sessionManager');
 module.exports = ErrorHanlder({
 	createDoc,
 	addDocUser,
+	getMyDocNames,
 	getDocs,
 	getDoc,
 	getDocOps,
@@ -35,6 +38,21 @@ async function createDoc(req, res, next) {
 	console.log('createdoc controller');
 	console.log(options);
 	let result = await docService.createDoc(user, options);
+	// here we update the user session for docs
+	let sessionIDArr = userMapSession.get(user._id);
+	let data = await userService.getUserByIdWithDocs({id: user._id});
+	console.log(sessionIDArr);
+	// console.log(data);
+	if(sessionIDArr){
+		// let data = await userService.getUserByIdWithDocs({id: options.userId});
+		for(let sessionID of sessionIDArr){
+			console.log(sessionID);
+			// console.log(data);
+			sessionManager.updateUserSession(sessionID, data);
+		}
+	}
+	// one user many session
+	sessionManager.updateUserSession(req.session.id, data);
 	return next({
 		msg: result
 	});
@@ -59,6 +77,15 @@ async function addDocUser(req, res, next) {
 	console.log('add doc user controller');
 	console.log(options);
 	let result = await docService.addDocUser(user, options);
+
+	let sessionIDArr = userMapSession.get(options.userId);
+	console.log(sessionIDArr);
+	if(sessionIDArr){
+		let data = await userService.getUserByIdWithDocs({id: options.userId});
+		for(let sessionID of sessionIDArr){
+			sessionManager.updateUserSession(sessionID, data);
+		}		
+	}
 	return next({
 		msg: result
 	});
@@ -102,6 +129,27 @@ async function getDocs(req, res, next) {
 	let result = await docService.getDocs(req.session.user, options);
 	return next({
 		msg: result
+	});
+}
+
+/**
+ *
+ *
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns
+ */
+async function getMyDocNames(req, res, next) {
+	validationResult(req)
+		.throw();
+	let options = {
+	};
+	let docs = await docService.getMyDocNames(req.session.user, options);
+	return next({
+		msg: {
+			docs: docs
+		}
 	});
 }
 
