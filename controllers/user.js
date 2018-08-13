@@ -3,6 +3,7 @@ const APIError = require('../tools/APIError');
 const ErrorHanlder = require('../tools/error-handler');
 const { validationResult } = require('express-validator/check');
 const userMapSession = require('../mapper').userMapSession;
+const userMapSocket = require('../mapper').userMapSocket;
 const sessionManager = require('../sessionManager');
 
 module.exports = ErrorHanlder({
@@ -10,6 +11,7 @@ module.exports = ErrorHanlder({
 	getUserNames,
 	getUser,
 	getUserMap,
+	getUserSocket,
 	getUserSession,
 	login,
 	reg,
@@ -92,13 +94,25 @@ async function getUser(req, res, next) {
  * @returns
  */
 async function getUserMap(req, res, next){
-	let str = [...userMapSession.entries()];
-	console.log(userMapSession);
-	console.log(userMapSession.entries());
-	// for (let [key, value] of userMapSession.entries()) {
-	// 	str += `${key}  =  ${value} \n`;
-	// }
-	return next({msg: str});
+	let arr = await userMapSession.entries()
+	console.log(await userMapSession);
+	console.log(await userMapSession.entries());
+	return next({msg: arr});
+}
+
+/**
+ *
+ *
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns
+ */
+async function getUserSocket(req, res, next){
+	let arr = await userMapSocket.entries()
+	console.log(await userMapSocket);
+	console.log(await userMapSocket.entries());
+	return next({msg: arr});
 }
 
 
@@ -134,12 +148,13 @@ async function login(req, res, next) {
 	if (user) {
 		user.password = '';
 		req.session.user = user;
-		req.session.save();
+		// req.session.save();
 		// here 添加user map session
 		console.log('login');
 		console.log(user._id);
 		console.log(typeof user._id); // Object
 		userMapSession.append(user._id.valueOf().toString(), req.session.id);
+		sessionManager.updateUserSession(req.session.id, user);
 		return next({
 			msg: {
 				user: user

@@ -38,10 +38,65 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/v1/', indexRouter);
 app.use('/api/v1/', usersRouter);
 app.use('/api/v1/', docsRouter);
+let socketioSession = require('express-socket.io-session');
+const userMapSocket = require('./mapper')
+	.userMapSocket;
+let ioOptions = { 'destroy upgrade': false };
+var io = require('socket.io')
+	.listen(server, ioOptions);
+io.use(socketioSession(sessionParser));
+io.on("connection", function(socket) {
+	console.log(`in socket.io socket ${socket.id} connect`);
+	socket.on("index", function(data) {
+		console.log(socket.handshake.session);
+		if(socket.handshake.session.user){
+			let userId = socket.handshake.session.user._id;
+			userMapSocket.append(userId, 'index', socket.id);
+			console.log(`in socket.io socket ${socket.id} send index message`);
+			console.log(data);
+			socket.emit("index", { msg: "index back to client" });
+		} else {
+			socket.emit('index', {msg: 'not auth user session index'});
+		}
+	});
+	socket.on("docroom", function(data) {
+		// 解析data，将用户加入对应的room
+		if(socket.handshake.session.user){
+			let documentId = data.documentId;
+			let collectionName = data.collectionName;
+			let roomName = `${collectionName}-${documentId}`;
+			socket.join(roomName);
+			console.log(`on doc room ${roomName}`);
+			let rooms = Object.keys(socket.rooms);
+			console.log(rooms); // [ <socket.id>, '${roomName}' ]
+			console.log('servers all room');
+			console.log(io.sockets.adapter.rooms);
+			let userId = socket.handshake.session.user._id;
+			userMapSocket.append(userId, roomName, socket.id);
+			io.to(roomName)
+				.emit('newUser', { msg: 'io.to a new user has joined the room' });
+		} else {
+			socket.emit('newUser', {msg: 'not auth user session doc'});
+		}
+
+		// // broadcast to everyone in the room
+		// useless 
+		// socket.to(documentId)
+		// 	.emit('newUser', { msg: 'socket.to a new user has joined the room' });
+	});
+	socket.on('disconnect', function() {
+		console.log(`in socket.io socket ${socket.id} disconnect`);
+		if(socket.handshake.session.user){
+			let userId = socket.handshake.session.user._id;
+			userMapSocket.remove(userId, socket.id);
+		}
+	});
+});
 
 // init websockets servers
-var wssShareDB = require('./shareDBServer').wss;
-var wssChat = require('./chatServer').wss;
+var wssShareDB = require('./shareDBServer')
+	.wss;
+// var wssChat = require('./chatServer').wss;
 
 server.on('upgrade', (request, socket, head) => {
 	const pathname = url.parse(request.url)
@@ -53,10 +108,11 @@ server.on('upgrade', (request, socket, head) => {
 			wssShareDB.emit('connection', ws, request);
 		});
 	} else if (pathname === '/chat') {
-		wssChat.handleUpgrade(request, socket, head, (ws) => {
-			// 必须传递req
-			wssChat.emit('connection', ws, request);
-		});
+		// wssChat.handleUpgrade(request, socket, head, (ws) => {
+		// 	// 必须传递req
+		// 	wssChat.emit('connection', ws, request);
+		// });
+		socket.destroy();
 	} else {
 		socket.destroy();
 	}

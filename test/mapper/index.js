@@ -1,2 +1,2 @@
-require('./userMapSession');
+// require('./userMapSession');
 require('./userMapSocket');

@@ -1,60 +1,100 @@
-// const redis = require('../ioredisClient');
-// userId: 'session1|session2' 键值对
+const redis = require('../ioredisClient');
+// const Redis = require('ioredis-mock');
+// var redis = new Redis({
+//   // `options.data` does not exist in `ioredis`, only `ioredis-mock`
+// });
+// userMapSocket:userId => JSON.stringify(socketMap)
+// socketMap = {
+// 		index: [],
+// 		documentId: []
+// 	}
 class userMapSocket {
 	constructor() {
-		this._map = new Map();
-		// this._map = {};
+
 	}
 
-	keys() {
-		return this._map.keys();
-    }
-    
-	entries() {
-		return this._map.entries();
+	async keys() {
+		return await redis.keys(`userMapSocket:*`);
 	}
 
-	set(userId, socketString) {
-		// 不在乎之前是否已经有对应的socketString
-		this._map.set(userId, socketString);
-	}
-
-	unshift(userId, socketString) {
-		// 如果之前有socket string , 添加到其背后
-		// 否则直接增加一个即可
-		if (this.has(userId)) {
-			let oldSocketString = this._map.get(userId);
-			let newSocketString = `${socketString}|${oldSocketString}`;
-			this._map.set(userId, newSocketString);
-		} else {
-			this._map.set(userId, socketString);
+	async entries() {
+		let keys = await this.keys();
+		let result = [];
+		for (let key of keys) {
+			let value = await redis.get(key);
+			result.push({
+				k: key,
+				v: value
+			});
 		}
+		return result;
 	}
 
-	append(userId, socketString) {
-		// 如果之前有socket string , 添加到其背后
-		// 否则直接增加一个即可
-		if (this.has(userId)) {
-			let oldSocketString = this._map.get(userId);
-			let newSocketString = `${oldSocketString}|${socketString}`;
-			this._map.set(userId, newSocketString);
+	async set(userId, pre, socketId) {
+		// 不在乎之前是否已经有对应的socketId
+		let obj = await this.get(userId);
+		if (obj) {
+			// do nothing
 		} else {
-			this._map.set(userId, socketString);
+			obj = {};
 		}
+		obj[pre] = [socketId];
+		return await redis.set(`userMapSocket:${userId}`, JSON.stringify(obj));
 	}
 
-	has(userId) {
-		return this._map.has(userId);
+	async has(userId) {
+		return await redis.exists(`userMapSocket:${userId}`);
 	}
 
-	get(userId) {
-		// 如果有，返回数组，
+	async get(userId) {
+		// 如果有，返回json，
 		// 如果无，返回Null
-		if (this.has(userId)) {
-			let socketString = this._map.get(userId);
-			return socketString.split('|');
+		if (await this.has(userId)) {
+			let obj = await redis.get(`userMapSocket:${userId}`);
+			return JSON.parse(obj) || {};
 		} else {
 			return null;
+		}
+	}
+
+	async append(userId, pre, socketId) {
+		let obj = await this.get(userId);
+		if (obj) {
+			// do nothing
+		} else {
+			obj = {};
+		}
+		if (!obj[pre]) {
+			obj[pre] = [];
+		}
+		if (obj[pre].indexOf(socketId) === -1) {
+			obj[pre].push(socketId);
+		}
+		return await redis.set(`userMapSocket:${userId}`, JSON.stringify(obj));
+	}
+
+	async remove(userId, socketId) {
+		// 如果指定pre，那么只会删除对应的pre的。
+		let obj = await this.get(userId);
+		if (!obj) {
+			// do nothing
+			return 0;
+		} else {
+			for (let [k, v] of Object.entries(obj)) {
+				let i = v.indexOf(socketId);
+				if (i !== -1) {
+					obj[k].splice(i, 1);
+				}
+			}
+			return await redis.set(`userMapSocket:${userId}`, JSON.stringify(obj));
+		}
+	}
+
+	async delete(userId) {
+		if (await this.has(userId)) {
+			return await redis.del(`userMapSocket:${userId}`);
+		} else {
+			return 0;
 		}
 	}
 }

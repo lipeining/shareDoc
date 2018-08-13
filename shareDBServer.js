@@ -327,17 +327,17 @@ shareDBServer.use('receive', function(request, next) {
 });
 
 var wss = new WebSocket.Server({
-	verifyClient: (info, done) => {
-		console.log('Parsing session from request...');
-		sessionParser(info.req, {}, () => {
-			console.log('Session is parsed!');
-			//
-			// We can reject the connection by returning false to done(). For example,
-			// reject here if user is unknown.
-			//
-			done(info.req.session);
-		});
-	},
+	// verifyClient: (info, done) => {
+	// 	console.log('Parsing session from request db server...');
+	// 	sessionParser(info.req, {}, () => {
+	// 		console.log('Session is parsed! db server');
+	// 		//
+	// 		// We can reject the connection by returning false to done(). For example,
+	// 		// reject here if user is unknown.
+	// 		//
+	// 		done(info.req.session);
+	// 	});
+	// },
 	noServer: true
 });
 

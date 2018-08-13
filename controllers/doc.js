@@ -39,7 +39,7 @@ async function createDoc(req, res, next) {
 	console.log(options);
 	let result = await docService.createDoc(user, options);
 	// here we update the user session for docs
-	let sessionIDArr = userMapSession.get(user._id);
+	let sessionIDArr = await userMapSession.get(user._id);
 	let data = await userService.getUserByIdWithDocs({id: user._id});
 	console.log(sessionIDArr);
 	// console.log(data);
@@ -78,7 +78,7 @@ async function addDocUser(req, res, next) {
 	console.log(options);
 	let result = await docService.addDocUser(user, options);
 
-	let sessionIDArr = userMapSession.get(options.userId);
+	let sessionIDArr = await userMapSession.get(options.userId);
 	console.log(sessionIDArr);
 	if(sessionIDArr){
 		let data = await userService.getUserByIdWithDocs({id: options.userId});

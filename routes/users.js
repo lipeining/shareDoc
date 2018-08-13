@@ -17,6 +17,9 @@ router.get('/user', checkSchema(userValidateSchema.getUser), userCtrl.getUser);
 router.get('/user/map', userCtrl.getUserMap);
 
 /* GET user  map*/
+router.get('/user/socket', userCtrl.getUserSocket);
+
+/* GET user  map*/
 router.get('/user/session', userCtrl.getUserSession);
 
 // login

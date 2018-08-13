@@ -1,7 +1,95 @@
-// const redis = require('../ioredisClient');
+const redis = require('../ioredisClient');
+// const Redis = require('ioredis-mock');
+// var redis = new Redis({
+//   // `options.data` does not exist in `ioredis`, only `ioredis-mock`
+// });
+// userMapSession:userId => JSON.stringify([])
+class userMapSession {
+	constructor() {
+
+	}
+
+	async keys() {
+		return await redis.keys(`userMapSession:*`);
+	}
+
+	async entries() {
+		let keys = await this.keys();
+		let result = [];
+		for (let key of keys) {
+			let value = await redis.get(key);
+			result.push({
+				k: key,
+				v: value
+			});
+		}
+		return result;
+	}
+
+	async set(userId, sessionId) {
+		// 不在乎之前是否已经有对应的sessionId
+		let obj = [sessionId];
+		return await redis.set(`userMapSession:${userId}`, JSON.stringify(obj));
+	}
+
+	async has(userId) {
+		return await redis.exists(`userMapSession:${userId}`);
+	}
+
+	async get(userId) {
+		// 如果有，返回json，
+		// 如果无，返回Null
+		if (await this.has(userId)) {
+			let obj = await redis.get(`userMapSession:${userId}`);
+			return JSON.parse(obj) || [];
+		} else {
+			return null;
+		}
+	}
+
+	async append(userId, sessionId) {
+		let obj = await this.get(userId);
+		if (obj) {
+			// do nothing
+		} else {
+			obj = [];
+		}
+		if (obj.indexOf(sessionId) === -1) {
+			obj.push(sessionId);
+		}
+		return await redis.set(`userMapSession:${userId}`, JSON.stringify(obj));
+	}
+
+	async remove(userId, sessionId) {
+		let obj = await this.get(userId);
+		if (!obj) {
+			// do nothing
+			return 2;
+		} else {
+			let i = obj.indexOf(sessionId);
+			if (i >= 0) {
+				obj.splice(i, 1);
+				await redis.set(`userMapSession:${userId}`, JSON.stringify(obj));
+				return 0;
+			} else {
+				// no such sessionId
+				return 1;
+			}
+		}
+	}
+
+	async delete(userId) {
+		if (await this.has(userId)) {
+			return await redis.del(`userMapSession:${userId}`);
+		} else {
+			return 0;
+		}
+	}
+}
+
 // userId: 'session1|session2' 键值对
 // userId: JSON.stringify([sessionArr]);
-class userMapSession {
+class userMapSessionMemory {
 	constructor() {
 		this._map = new Map();
 		// this._map = {};
@@ -9,8 +97,8 @@ class userMapSession {
 
 	keys() {
 		return this._map.keys();
-    }
-    
+	}
+
 	entries() {
 		return this._map.entries();
 	}
@@ -41,7 +129,7 @@ class userMapSession {
 			this.set(userId, sessionArr);
 		} else {
 			this.set(userId, [sessionString]);
-		}	
+		}
 	}
 
 	has(userId) {
@@ -65,23 +153,23 @@ class userMapSession {
 		return !sessionArr || !!sessionArr.length;
 	}
 
-	delete(userId){
+	delete(userId) {
 		// 如果有，返回true, 如果没有,返回false
 		this._map.delete(userId);
 	}
 
-	remove(userId, sessionString){
+	remove(userId, sessionString) {
 		let sessionArr = this.get(userId);
-		if(sessionArr){
+		if (sessionArr) {
 			let index = sessionArr.indexOf(sessionString);
 			// if index === -1
-			if(index>=0){
+			if (index >= 0) {
 				sessionArr.splice(index, 1);
 				this.set(userId, sessionArr);
-			}else{
-				return 2;// no such sessionString
+			} else {
+				return 2; // no such sessionString
 			}
-		}else{
+		} else {
 			return 1; // no such user map session 
 		}
 	}
