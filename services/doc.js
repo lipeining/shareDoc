@@ -167,6 +167,7 @@ async function getDocOps(options) {
 	// 暂时不管有多长，全部返回
 	// let to = options.to > maxV ? maxV : options.to;
 	// let from = options.from;
+	// http://bluebirdjs.com/docs/api/new-promise.html
 	let from = 1;
 	let to = snapshots.v;
 	return new Promise(function(resolve, reject) {
