@@ -6,6 +6,8 @@ const User = require('../models/user');
 const userService = require('./user');
 module.exports = {
 	createDoc,
+	createDocData,
+	importDoc,
 	addDocUser,
 	getMyDocNames,
 	getDocById,
@@ -35,13 +37,58 @@ async function createDoc(user, options) {
 	});
 	await userInstance.docs.push(doc);
 	await userInstance.save();
+	return await item;
+}
+
+/**
+ *
+ *
+ * @param {*} user
+ * @param {*} options
+ * @param {*} delta
+ * @param {String} options.collectionName
+ * @param {String} options.documentId
+ * @returns
+ */
+async function createDocData(options, delta = []) {
 	// 只有在需要的时候，连接服务器.
 	let shareConnection = shareDBServer.connect();
 	let storeDoc = shareConnection.get(options.collectionName, options.documentId);
-	storeDoc.create([], 'rich-text');
+	storeDoc.create(delta, 'rich-text');
 	// if (!storeDoc.type)
 	// 	storeDoc.create([], 'rich-text');
-	return await item;
+}
+
+/**
+ *
+ *
+ * @param {*} user
+ * @param {*} options
+ * @param {String} options.collectionName
+ * @param {String} options.documentId
+ * @param {Object} options.delta
+ * @returns
+ */
+async function importDoc(user, options) {
+	// 只有在需要的时候，连接服务器.
+	let shareConnection = shareDBServer.connect();
+	let storeDoc = shareConnection.get(options.collectionName, options.documentId);
+	storeDoc.create([], 'rich-text', function(err) {
+		if(err) {
+			console.log('import doc create doc error');
+			console.log(err);
+		} else {
+			// storeDoc.subscribe(function(error) {
+			// 	if(error) {
+			// 		console.log('import doc subscribe doc error');
+			// 		console.log(error);
+			// 	} else {
+			// 		storeDoc.submitOp(options.delta, {source: 'wow'});
+			// 	}
+			// });
+			storeDoc.submitOp(options.delta, {source: 'wow'});
+		}
+	});
 }
 
 /**
@@ -144,11 +191,11 @@ async function getDocTest(user, options) {
  * @param {*} options
  * @returns
  */
-async function getMyDocNames(user, options){
-	let docs = await Doc.find({creator: user._id}).select({documentId: 1, collection: 1});
+async function getMyDocNames(user, options) {
+	let docs = await Doc.find({ creator: user._id })
+		.select({ documentId: 1, collection: 1 });
 	return await docs;
 }
-
 
 /**
  *

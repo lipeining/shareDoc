@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const redis = require('../ioredisClient');
 // const Redis = require('ioredis-mock');
 // var redis = new Redis({
@@ -75,6 +76,30 @@ class userMapSession {
 				// no such sessionId
 				return 1;
 			}
+		}
+	}
+
+	async attach(userId) {
+		// 清除为空的键值对
+		let obj = await this.get(userId);
+		if (!obj) {
+			// do nothing
+		} else {
+			// 如果对象中的值都没有了，那么delete it
+			if (_.isEmpty(obj)) {
+				await this.delete(userId);
+			}
+			// 考虑，使用sessionManager查看对应的session是否已经被删除了，然后更新这个mapper
+		}
+	}
+
+	async attachAll() {
+		// 清除所有为空的键值对
+		let keys = await this.keys();
+		for(let k of keys) {
+			// 去掉开头的userMapSession:
+			let userId = k.substring(15);
+			await this.attach(userId);
 		}
 	}
 

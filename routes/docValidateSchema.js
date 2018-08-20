@@ -16,6 +16,12 @@ const createDoc = {
 		}
 	},
 };
+const importDoc = {
+	fileName: { in: ['body']
+	},
+	delta: { in: ['body']
+	},
+};
 const addDocUser = {
 	docId: { in: ['body']
 	},
@@ -92,6 +98,7 @@ const getSnapshots = {
 
 module.exports = {
 	createDoc: createDoc,
+	importDoc: importDoc,
 	addDocUser: addDocUser,
 	getMyDocNames: getMyDocNames,
 	getDocs: getDocs,

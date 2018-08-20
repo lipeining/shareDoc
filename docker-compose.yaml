@@ -16,9 +16,11 @@ services:
       - db
     expose:
       - "5000"
+      - "5858"
     ports:
       - "5000:5000"
-    command: "npm start"
+      - "5858:5858"
+    command: "node --inspect-brk=0.0.0.0:5858 app.js"
 
   redis:
     image: "redis:4.0"

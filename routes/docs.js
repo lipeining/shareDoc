@@ -13,6 +13,8 @@ router.get('/docs', auth.checkLogin,
 	checkSchema(docValidateSchema.getDocs), docCtrl.getDocs);
 router.get('/doc', auth.checkLogin,
 	checkSchema(docValidateSchema.getDoc), docCtrl.getDoc);
+router.post('/doc/import', auth.checkLogin,
+	checkSchema(docValidateSchema.importDoc), docCtrl.importDoc);	
 router.get('/doc/ops', auth.checkLogin,
 	checkSchema(docValidateSchema.getDocOps), docCtrl.getDocOps);
 router.get('/doc/snapshots', auth.checkLogin,

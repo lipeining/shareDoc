@@ -6,10 +6,13 @@ const ErrorHanlder = require('../tools/error-handler');
 const {
 	validationResult
 } = require('express-validator/check');
-const userMapSession = require('../mapper').userMapSession;
+const userMapSession = require('../mapper')
+	.userMapSession;	
 const sessionManager = require('../sessionManager');
+const socketManager = require('../socketManager');
 module.exports = ErrorHanlder({
 	createDoc,
+	importDoc,
 	addDocUser,
 	getMyDocNames,
 	getDocs,
@@ -38,14 +41,14 @@ async function createDoc(req, res, next) {
 	console.log('createdoc controller');
 	console.log(options);
 	let result = await docService.createDoc(user, options);
+	await docService.createDocData(options);
 	// here we update the user session for docs
 	let sessionIDArr = await userMapSession.get(user._id);
-	let data = await userService.getUserByIdWithDocs({id: user._id});
 	console.log(sessionIDArr);
+	let data = await userService.getUserByIdWithDocs({ id: user._id });
 	// console.log(data);
-	if(sessionIDArr){
-		// let data = await userService.getUserByIdWithDocs({id: options.userId});
-		for(let sessionID of sessionIDArr){
+	if (sessionIDArr) {
+		for (let sessionID of sessionIDArr) {
 			console.log(sessionID);
 			// console.log(data);
 			sessionManager.updateUserSession(sessionID, data);
@@ -53,8 +56,61 @@ async function createDoc(req, res, next) {
 	}
 	// one user many session
 	sessionManager.updateUserSession(req.session.id, data);
+	// update the client user info
+	socketManager.sendUserIndexMessage(user._id, 'updateUser', {user: data});
 	return next({
 		msg: result
+	});
+}
+
+/**
+ *
+ *
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns
+ */
+async function importDoc(req, res, next) {
+	validationResult(req)
+		.throw();
+	let user = req.session.user;
+	let createOptions = {
+		creator: user._id,
+		collectionName: 'import',
+		documentId: req.body.fileName || ''
+	};
+	let importOptions = {
+		collectionName: 'import',
+		documentId: req.body.fileName || '',
+		delta: req.body.delta
+	};
+	// 导入文档是否需要考虑用户只上传了文档，点击保存的情况
+	// 这样的话，需要将文档中的图片放到临时目录，然后在这个接口将文档的图片
+	// 放到正确的位置。
+	console.log('importdoc controller');
+	console.log(createOptions);
+	console.log(importOptions);
+	let createRes = await docService.createDoc(user, createOptions);
+	await docService.importDoc(user, importOptions);
+	// here we update the user session for docs
+	let sessionIDArr = await userMapSession.get(user._id);
+	console.log(sessionIDArr);
+	let data = await userService.getUserByIdWithDocs({ id: user._id });
+	// console.log(data);
+	if (sessionIDArr) {
+		for (let sessionID of sessionIDArr) {
+			console.log(sessionID);
+			// console.log(data);
+			sessionManager.updateUserSession(sessionID, data);
+		}
+	}
+	// one user many session
+	sessionManager.updateUserSession(req.session.id, data);
+	// update the client user info
+	socketManager.sendUserIndexMessage(user._id, 'updateUser', {user: data});
+	return next({
+		msg: createRes
 	});
 }
 
@@ -80,11 +136,13 @@ async function addDocUser(req, res, next) {
 
 	let sessionIDArr = await userMapSession.get(options.userId);
 	console.log(sessionIDArr);
-	if(sessionIDArr){
-		let data = await userService.getUserByIdWithDocs({id: options.userId});
-		for(let sessionID of sessionIDArr){
+	if (sessionIDArr) {
+		let data = await userService.getUserByIdWithDocs({ id: options.userId });
+		for (let sessionID of sessionIDArr) {
 			sessionManager.updateUserSession(sessionID, data);
-		}		
+		}
+		// update the client user info
+		socketManager.sendUserIndexMessage(options.userId, 'updateUser', {user: data});	
 	}
 	return next({
 		msg: result
@@ -143,8 +201,7 @@ async function getDocs(req, res, next) {
 async function getMyDocNames(req, res, next) {
 	validationResult(req)
 		.throw();
-	let options = {
-	};
+	let options = {};
 	let docs = await docService.getMyDocNames(req.session.user, options);
 	return next({
 		msg: {

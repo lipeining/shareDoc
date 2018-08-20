@@ -230,7 +230,8 @@ async function logout(req, res, next) {
 	console.log('logout');
 	console.log(req.session.user._id);
 	console.log(typeof req.session.user._id); // String
-	userMapSession.remove(req.session.user._id, req.session.id);
+	await userMapSession.remove(req.session.user._id, req.session.id);
+	await userMapSession.attach(req.session.user._id);
 	req.session.destroy();
 	console.log('session destroy');
 	return res.json({});

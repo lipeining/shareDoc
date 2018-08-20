@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const redis = require('../ioredisClient');
 // const Redis = require('ioredis-mock');
 // var redis = new Redis({
@@ -32,12 +33,13 @@ class userMapSocket {
 
 	async set(userId, pre, socketId) {
 		// 不在乎之前是否已经有对应的socketId
-		let obj = await this.get(userId);
-		if (obj) {
-			// do nothing
-		} else {
-			obj = {};
-		}
+		// let obj = await this.get(userId);
+		// if (obj) {
+		// 	// do nothing
+		// } else {
+		// 	obj = {};
+		// }
+		let obj = {};
 		obj[pre] = [socketId];
 		return await redis.set(`userMapSocket:${userId}`, JSON.stringify(obj));
 	}
@@ -76,6 +78,7 @@ class userMapSocket {
 	async remove(userId, socketId) {
 		// 如果指定pre，那么只会删除对应的pre的。
 		let obj = await this.get(userId);
+		// console.log(obj);
 		if (!obj) {
 			// do nothing
 			return 0;
@@ -86,7 +89,41 @@ class userMapSocket {
 					obj[k].splice(i, 1);
 				}
 			}
+			// console.log(obj);
 			return await redis.set(`userMapSocket:${userId}`, JSON.stringify(obj));
+		}
+	}
+
+	async attach(userId) {
+		// 清除为空的键值对
+		let obj = await this.get(userId);
+		if (!obj) {
+			// do nothing
+		} else {
+			for (let [k, v] of Object.entries(obj)) {
+				if (v.length) {
+					// 如果不为空
+					// do nothing
+				} else {
+					delete obj[k];
+				}
+			}
+			// 如果对象中的值都没有了，那么delete it
+			if (_.isEmpty(obj)) {
+				await this.delete(userId);
+			} else {
+				await redis.set(`userMapSocket:${userId}`, JSON.stringify(obj));
+			}
+		}
+	}
+
+	async attachAll() {
+		// 清除所有为空的键值对
+		let keys = await this.keys();
+		for(let k of keys) {
+			// 去掉开头的userMapSocket:
+			let userId = k.substring(14);
+			await this.attach(userId);
 		}
 	}
 
