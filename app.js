@@ -44,76 +44,14 @@ app.use('/api/v1/', usersRouter);
 app.use('/api/v1/', docsRouter);
 app.use('/api/v1/', uploadRouter);
 let socketioSession = require('express-socket.io-session');
-const userMapSocket = require('./mapper')
-	.userMapSocket;
 let ioOptions = { 'destroy upgrade': false };
-var socketManager = require('./socketManager');
+var iorouter = require('./routes/iorouter');
 var io = require('socket.io')
 	.listen(server, ioOptions);
 // io为全局变量
 global.io = io;
 io.use(socketioSession(sessionParser));
-io.on("connection", function(socket) {
-	console.log(`in socket.io socket ${socket.id} connect`);
-	socket.on("index", async function(data) {
-		console.log(socket.handshake.session);
-		if (!socket.handshake.session.user) {
-			socket.handshake.session.reload(function(err) {
-				if (err) {
-					console.log(err);
-				} else {
-					console.log('reload session done');
-				}
-			});
-		}
-		if (socket.handshake.session.user) {
-			let userId = socket.handshake.session.user._id;
-			await userMapSocket.append(userId, 'index', socket.id);
-			console.log(`in socket.io socket ${socket.id} send index message`);
-			console.log(data);
-			socket.emit("index", { msg: "index back to client" });
-		} else {
-			socket.emit('index', { msg: 'not auth user session index' });
-		}
-	});
-	socket.on("docroom", async function(data) {
-		// 解析data，将用户加入对应的room
-		if (socket.handshake.session.user) {
-			let documentId = data.documentId;
-			let collectionName = data.collectionName;
-			let roomName = `${collectionName}-${documentId}`;
-			socket.join(roomName);
-			console.log(`on doc room ${roomName}`);
-			let rooms = Object.keys(socket.rooms);
-			console.log(rooms); // [ <socket.id>, '${roomName}' ]
-			console.log('servers all room');
-			console.log(io.sockets.adapter.rooms);
-			let userId = socket.handshake.session.user._id;
-			await userMapSocket.append(userId, roomName, socket.id);
-			await socketManager.broadcastRoomMessage(roomName, 'newUser', { msg: 'io.to a new user has joined the room' });
-			// io.to(roomName)
-			// 	.emit('newUser', { msg: 'io.to a new user has joined the room' });
-		} else {
-			socket.emit('newUser', { msg: 'not auth user session doc' });
-		}
-
-		// // broadcast to everyone in the room
-		// useless 
-		// socket.to(documentId)
-		// 	.emit('newUser', { msg: 'socket.to a new user has joined the room' });
-	});
-	socket.on('disconnect', async function() {
-		console.log(`in socket.io socket ${socket.id} disconnect`);
-		if (socket.handshake.session.user) {
-			let userId = socket.handshake.session.user._id;
-			await userMapSocket.remove(userId, socket.id);
-			// console.log(await userMapSocket.get(userId));
-			await userMapSocket.attach(userId);
-			// console.log(await userMapSocket.get(userId));
-		}
-	});
-});
-
+iorouter(io);
 // init websockets servers
 var wssShareDB = require('./shareDBServer')
 	.wss;
