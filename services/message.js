@@ -17,8 +17,8 @@ async function getMessages(user, options) {
 	return await Message.find()
 		.limit(options.pageSize)
         .skip((options.pageIndex - 1) * options.pageSize)
-        .populate('toUser')
-        .populate('doc');
+        .populate({path: 'toUser', select: 'name avatar '})
+        .populate({path: 'doc', select: 'collectionName documentId star'});
 }
 
 

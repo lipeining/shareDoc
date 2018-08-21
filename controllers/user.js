@@ -186,6 +186,8 @@ async function reg(req, res, next) {
 	let user = await userService.reg(newUser);
 	user.password = '';
 	req.session.user = user;
+	userMapSession.append(user._id.valueOf().toString(), req.session.id);
+	sessionManager.updateUserSession(req.session.id, user);
 	return next({
 		msg: {
 			user: user

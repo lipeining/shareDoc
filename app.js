@@ -21,6 +21,8 @@ var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var docsRouter = require('./routes/docs');
 var uploadRouter = require('./routes/upload');
+var chatRouter = require('./routes/chat');
+var msgRouter = require('./routes/message');
 var _ = require('lodash');
 var app = express();
 var server = http.createServer(app);
@@ -43,6 +45,8 @@ app.use('/api/v1/', indexRouter);
 app.use('/api/v1/', usersRouter);
 app.use('/api/v1/', docsRouter);
 app.use('/api/v1/', uploadRouter);
+app.use('/api/v1/', chatRouter);
+app.use('/api/v1/', msgRouter);
 let socketioSession = require('express-socket.io-session');
 let ioOptions = { 'destroy upgrade': false };
 var iorouter = require('./routes/iorouter');
@@ -50,7 +54,23 @@ var io = require('socket.io')
 	.listen(server, ioOptions);
 // io为全局变量
 global.io = io;
-io.use(socketioSession(sessionParser));
+io.use(socketioSession(sessionParser, { resave: true }));
+io.use(function(socket, next) {
+	// console.log(socket.handshake.session);
+	// socket会比session.user早到。这里的代码无意义
+	// if (!socket.handshake.session.user) {
+	// 	socket.handshake.session.reload(function(err) {
+	// 		if (err) {
+	// 			console.log(err);
+	// 			next(err);
+	// 		} else {
+	// 			console.log('reload session done');
+	// 			next(null, true);
+	// 		}
+	// 	});
+	// }
+	next(null, true);
+});
 iorouter(io);
 // init websockets servers
 var wssShareDB = require('./shareDBServer')

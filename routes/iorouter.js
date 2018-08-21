@@ -9,6 +9,9 @@ module.exports = function(io) {
         socket.on("docroom", async function(data) {
             await ioCtrl.onDocRoom(socket, data);
         });
+        socket.on("chat", async function(data) {
+            await ioCtrl.onChat(socket, data);
+        });
         socket.on('disconnect', async function() {
             await ioCtrl.onDisconnection(socket);
         });

@@ -10,7 +10,8 @@ var store = new RedisStore({
 var sessionParser = session({
 	store: store,
 	secret: 'sharedoc',
-	resave: false,
+    resave: true,
+    saveUninitialized: true,
 	cookie: {
 		maxAge: 6000000
 	} //100 min

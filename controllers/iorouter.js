@@ -1,11 +1,13 @@
 const msgService = require('../services/message');
+const chatService = require('../services/chat');
 const userMapSocket = require('../mapper')
-    .userMapSocket;
-const socketManager = require('../socketManager');    
+	.userMapSocket;
+const socketManager = require('../socketManager');
 module.exports = {
 	onIndex,
 	onDisconnection,
-	onDocRoom
+	onDocRoom,
+	onChat
 }
 
 /**
@@ -16,22 +18,13 @@ module.exports = {
 async function onIndex(socket, data) {
 	console.log(socket.handshake.session);
 	if (!socket.handshake.session.user) {
-		socket.handshake.session.reload(function(err) {
-			if (err) {
-				console.log(err);
-			} else {
-				console.log('reload session done');
-			}
-		});
-	}
-	if (socket.handshake.session.user) {
+		socket.emit('index', { msg: 'not auth user session index', success: 0 });
+	} else {
 		let userId = socket.handshake.session.user._id;
 		await userMapSocket.append(userId, 'index', socket.id);
 		console.log(`in socket.io socket ${socket.id} send index message`);
 		console.log(data);
-		socket.emit("index", { msg: "index back to client" });
-	} else {
-		socket.emit('index', { msg: 'not auth user session index' });
+		socket.emit("index", { msg: "index back to client", success: 1 });
 	}
 }
 
@@ -40,9 +33,13 @@ async function onIndex(socket, data) {
  * @param {*} socket
  * @param {*} data
  */
-async function onDisconnection(socket, data) {
+async function onDocRoom(socket, data) {
 	// 解析data，将用户加入对应的room
 	if (socket.handshake.session.user) {
+		// 在这里加入socket.docId;
+		socket.docId = data.docId;
+		socket.documentId = data.documentId;
+		socket.collectionName = data.collectionName;
 		let documentId = data.documentId;
 		let collectionName = data.collectionName;
 		let roomName = `${collectionName}-${documentId}`;
@@ -65,14 +62,34 @@ async function onDisconnection(socket, data) {
 /**
  *
  * @param {*} socket
+ * @param {*} data
  */
-async function onDocRoom(socket) {
-    console.log(`in socket.io socket ${socket.id} disconnect`);
-    if (socket.handshake.session.user) {
-        let userId = socket.handshake.session.user._id;
-        await userMapSocket.remove(userId, socket.id);
-        // console.log(await userMapSocket.get(userId));
-        await userMapSocket.attach(userId);
-        // console.log(await userMapSocket.get(userId));
-    }
+async function onChat(socket, data) {
+	console.log(`in socket.io socket ${socket.id} on chat`);
+	// 创建chat记录
+	let user = socket.handshake.session.user;
+	let options = {
+		user: user._id,
+		content: data.content,
+		ref: data.ref || '',
+		doc: socket.docId
+	}
+	let chat = await chatService.createChat(options);
+	let roomName = `${socket.collectionName}-${socket.documentId}`;
+	await socketManager.broadcastRoomMessage(roomName, 'chat', { chat: chat });
+}
+
+/**
+ *
+ * @param {*} socket
+ */
+async function onDisconnection(socket) {
+	console.log(`in socket.io socket ${socket.id} disconnect`);
+	if (socket.handshake.session.user) {
+		let userId = socket.handshake.session.user._id;
+		await userMapSocket.remove(userId, socket.id);
+		// console.log(await userMapSocket.get(userId));
+		await userMapSocket.attach(userId);
+		// console.log(await userMapSocket.get(userId));
+	}
 }
