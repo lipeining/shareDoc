@@ -22,10 +22,19 @@ const importDoc = {
 	delta: { in: ['body']
 	},
 };
+const getDocUsers = {
+	docId: { in: ['query']
+	},
+	type: { in: ['query']}
+};
 const addDocUser = {
 	docId: { in: ['body']
 	},
 	userId: { in: ['body']
+	},
+	status: { in: ['body'],
+		isInt: true,
+		toInt: true
 	}
 };
 const getMyDocNames = {
@@ -99,6 +108,7 @@ const getSnapshots = {
 module.exports = {
 	createDoc: createDoc,
 	importDoc: importDoc,
+	getDocUsers: getDocUsers,
 	addDocUser: addDocUser,
 	getMyDocNames: getMyDocNames,
 	getDocs: getDocs,

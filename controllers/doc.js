@@ -1,5 +1,6 @@
 const docService = require('../services/doc');
 const userService = require('../services/user');
+const msgService = require('../services/message');
 var util = require('util');
 const APIError = require('../tools/APIError');
 const ErrorHanlder = require('../tools/error-handler');
@@ -13,7 +14,9 @@ const socketManager = require('../socketManager');
 module.exports = ErrorHanlder({
 	createDoc,
 	importDoc,
+	getDocUsers,
 	addDocUser,
+	setDocUser,
 	getMyDocNames,
 	getDocs,
 	getDoc,
@@ -36,7 +39,8 @@ async function createDoc(req, res, next) {
 	let options = {
 		creator: user._id,
 		collectionName: req.body.collectionName || '',
-		documentId: req.body.documentId || ''
+		documentId: req.body.documentId || '',
+		users: []
 	};
 	console.log('createdoc controller');
 	console.log(options);
@@ -78,7 +82,8 @@ async function importDoc(req, res, next) {
 	let createOptions = {
 		creator: user._id,
 		collectionName: 'import',
-		documentId: req.body.fileName || ''
+		documentId: req.body.fileName || '',
+		users: []
 	};
 	let importOptions = {
 		collectionName: 'import',
@@ -114,6 +119,28 @@ async function importDoc(req, res, next) {
 	});
 }
 
+
+/**
+ *
+ *
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns
+ */
+async function getDocUsers(req, res, next) {
+	validationResult(req)
+		.throw();
+	let options = {
+		docId: req.query.docId || '',
+		type: req.query.type || 0
+	};
+	let result = await docService.getDocUsers(req.session.user, options);
+	return next({
+		msg: result
+	});
+}
+
 /**
  *
  *
@@ -128,12 +155,15 @@ async function addDocUser(req, res, next) {
 	let user = req.session.user;
 	let options = {
 		docId: req.body.docId || '',
-		userId: req.body.userId || ''
+		userId: req.body.userId || '',
+		status: req.body.status || 0
 	};
 	console.log('add doc user controller');
-	console.log(options);
-	let result = await docService.addDocUser(user, options);
-
+	// console.log(options);
+	if(options.userId == user._id) {
+		return next(new APIError('can not add creator status'));
+	}
+	let content = await docService.addDocUser(user, options);
 	let sessionIDArr = await userMapSession.get(options.userId);
 	console.log(sessionIDArr);
 	if (sessionIDArr) {
@@ -144,8 +174,66 @@ async function addDocUser(req, res, next) {
 		// update the client user info
 		socketManager.sendUserIndexMessage(options.userId, 'updateUser', {user: data});	
 	}
+	// 添加对应的用户的未读消息记录
+    let msg = {
+		status: 1,
+		toUser: options.userId,
+		doc: options.docId,
+		content: content
+	};
+	await msgService.createMessage(msg);
+	// 推送系统消息
+	socketManager.sendUserIndexMessage(options.userId, 'systemNews', {msg: msg});
 	return next({
-		msg: result
+		msg: {}
+	});
+}
+
+/**
+ *
+ *
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns
+ */
+async function setDocUser(req, res, next) {
+	validationResult(req)
+		.throw();
+	let user = req.session.user;
+	let options = {
+		docId: req.body.docId || '',
+		userId: req.body.userId || '',
+		status: req.body.status || 0
+	};
+	console.log('set doc user controller');
+	// console.log(options);
+	if(options.userId == user._id) {
+		return next(new APIError('can not set creator status'));
+	}
+	let content = await docService.setDocUser(user, options);
+	let sessionIDArr = await userMapSession.get(options.userId);
+	console.log(sessionIDArr);
+	if (sessionIDArr) {
+		let data = await userService.getUserByIdWithDocs({ id: options.userId });
+		for (let sessionID of sessionIDArr) {
+			sessionManager.updateUserSession(sessionID, data);
+		}
+		// update the client user info
+		socketManager.sendUserIndexMessage(options.userId, 'updateUser', {user: data});	
+	}
+	// 添加对应的用户的未读消息记录
+    let msg = {
+		status: 1,
+		toUser: options.userId,
+		doc: options.docId,
+		content: content
+	};
+	await msgService.createMessage(msg);
+	// 推送系统消息
+	socketManager.sendUserIndexMessage(options.userId, 'systemNews', {msg: msg});
+	return next({
+		msg: {}
 	});
 }
 

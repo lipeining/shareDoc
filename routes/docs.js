@@ -5,6 +5,8 @@ const docCtrl = require('../controllers/doc');
 const { checkSchema } = require('express-validator/check');
 const docValidateSchema = require('./docValidateSchema');
 
+router.get('/doc/users', auth.checkLogin,
+	checkSchema(docValidateSchema.getDocUsers), docCtrl.getDocUsers);
 router.put('/doc/user', auth.checkLogin,
 	checkSchema(docValidateSchema.addDocUser), docCtrl.addDocUser);
 router.post('/doc', auth.checkLogin,

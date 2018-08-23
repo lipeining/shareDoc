@@ -33,7 +33,7 @@ services:
     command: "redis-server /usr/local/etc/redis/redis.conf"
 
   db:
-    image: "mongo:3.4"
+    image: "mongo:3.6"
     restart: "always"
     expose:
       - "27017"

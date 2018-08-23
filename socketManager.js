@@ -21,8 +21,9 @@ async function sendUserIndexMessage(userId, event, msg) {
 			for (let i of obj['index']) {
 				try {
 					// console.log(io);
-					// console.log(io.connectd);
+					// console.log(io.connected);
 					io.sockets.connected[i].emit(event, msg);
+					// console.log('send index message success');
 				} catch (err) {
 					console.log('send index message error');
 					console.log(err);
@@ -50,6 +51,7 @@ async function sendUserRoomMessage(userId, room, event, msg) {
 			for (let i of obj[room]) {
 				try {
 					io.sockets.connected[i].emit(event, msg);
+					// console.log('send room message success');
 				} catch (err) {
 					console.log(`send user room ${room} message error`);
 					console.log(err);
@@ -74,6 +76,7 @@ async function broadcastRoomMessage(room, event, msg) {
 	try {
 		io.sockets.to(room)
 			.emit(event, msg);
+		// console.log('broadcast room message success');			
 	} catch (err) {
 		console.log(`send room ${room} message error`);
 		console.log(err);

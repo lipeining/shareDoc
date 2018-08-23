@@ -116,7 +116,7 @@ app.use((err, req, res, next) => {
 						Message: err.array()
 					});
 			}
-			const apiError = new APIError(err.message, err.status);
+			const apiError = new APIError(err.message, err.status || 400);
 			return next(apiError);
 		}
 		return next(err);
@@ -130,7 +130,8 @@ app.use((err, req, res, next) => {
 
 // error handler, send stacktrace only during development
 app.use(function(err, req, res, next) { // eslint-disable-line no-unused-vars
-	return res.status(err.status)
+	let status = err.status || 400;
+	return res.status(status)
 		.json({
 			code: 4,
 			Message: err.message,
@@ -142,7 +143,7 @@ function start() {
 	app.set('port', 5000);
 	mongoose.connect('mongodb://db:27017/userdoc')
 		.then(function() {
-			console.log('MongoDB is connected')
+			console.log('MongoDB is connected');
 		})
 		.catch(function(err) {
 			console.log(err);

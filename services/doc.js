@@ -1,4 +1,5 @@
 var db = require('../sharedocdb');
+const mongoose = require('mongoose');
 const shareDBServer = require('../shareDBServer')
 	.shareDBServer;
 const Doc = require('../models/doc');
@@ -8,7 +9,11 @@ module.exports = {
 	createDoc,
 	createDocData,
 	importDoc,
+	getDocUsers,
+	setDocUser,
 	addDocUser,
+	updateDocUser,
+	removeDocUser,
 	getMyDocNames,
 	getDocById,
 	getDocTest,
@@ -26,16 +31,16 @@ module.exports = {
  * @returns
  */
 async function createDoc(user, options) {
-	let item = await Doc.create(options);
-	console.log(item);
-	let doc = {
-		item: item,
-		star: 1
+	let doc = await Doc.create(options);
+	console.log(doc);
+	let docitem = {
+		item: doc,
+		role: 0
 	};
 	let userInstance = await userService.getUserById({
 		id: user._id
 	});
-	await userInstance.docs.push(doc);
+	await userInstance.docs.push(docitem);
 	await userInstance.save();
 	return await item;
 }
@@ -74,7 +79,7 @@ async function importDoc(user, options) {
 	let shareConnection = shareDBServer.connect();
 	let storeDoc = shareConnection.get(options.collectionName, options.documentId);
 	storeDoc.create([], 'rich-text', function(err) {
-		if(err) {
+		if (err) {
 			console.log('import doc create doc error');
 			console.log(err);
 		} else {
@@ -86,9 +91,52 @@ async function importDoc(user, options) {
 			// 		storeDoc.submitOp(options.delta, {source: 'wow'});
 			// 	}
 			// });
-			storeDoc.submitOp(options.delta, {source: 'wow'});
+			storeDoc.submitOp(options.delta, { source: 'wow' });
 		}
 	});
+}
+
+/**
+ *
+ *
+ * @param {*} user
+ * @param {*} options
+ * @param {String} options.id
+ * @returns
+ */
+async function getDocUsers(user, options) {
+	let doc = await getDocById(options.docId);
+	let users = doc.users;
+	if(options.type) {
+		// 查找不在该文档中的人
+	} else {
+		// 插在在该文档中的人
+		//  do nothing
+	}
+	return users;
+}	
+
+/**
+ *
+ *
+ * @param {*} user
+ * @param {*} options
+ * @param {String} options.userId
+ * @param {String} options.docId
+ * @param {Int} options.status
+ * @returns
+ */
+async function setDocUser(user, options) {
+	// check user permission
+	let content = '';
+	if (options.status === 2) {
+		// 移除
+		content = await removeDocUser(user, options);
+	} else {
+		// 设置
+		content = await updateDocUser(user, options);
+	}
+	return await content;
 }
 
 /**
@@ -101,30 +149,164 @@ async function importDoc(user, options) {
  * @returns
  */
 async function addDocUser(user, options) {
+	// return await run();
 	// check user permission
-	let userInstance = await userService.getUserById({
-		id: options.userId
-	});
-	let docInstance = await getDocById({
-		id: options.docId
-	});
-	let star = 1;
+	let star = 0;
 	let role = 1;
 	let itemDoc = {
-		item: docInstance,
+		item: options.docId,
+		status: options.status,
 		star: star,
 		role: role
 	};
 	let itemUser = {
-		item: userInstance,
+		item: options.userId,
+		status: options.status,
 		star: star,
 		role: role
 	};
-	await userInstance.docs.push(itemDoc);
-	await userInstance.save();
-	await docInstance.users.push(itemUser);
-	await docInstance.save();
-	return await {};
+	await User.findOneAndUpdate({
+		_id: options.userId,
+		'docs.item': { $ne: options.docId }
+	}, {
+		$push: {
+			'docs': itemDoc
+		}
+	});
+	let docInstance = await Doc.findOneAndUpdate({
+		_id: options.docId,
+		'users.item': { $ne: options.userId }
+	}, {
+		$push: {
+			'users': itemUser
+		}
+	});
+	if (docInstance) {
+		let permission = options.status ? '只读' : '读写';
+		return await `${user.name} invite you to doc ${docInstance.collectionName}-${docInstance.documentId},${permission}`;
+	} else {
+		// 没有新增添对应的关系
+		return Promise.reject('can not add doc user');
+	}
+	// check是否已经有该对象, addToSet不能确认是否已经有该对象了，需要使用update和ne.
+	// await userInstance.docs.addToSet(itemDoc);
+}
+
+/**
+ *
+ *
+ * @param {*} user
+ * @param {*} options
+ * @param {String} options.userId
+ * @param {String} options.docId
+ * @returns
+ */
+async function updateDocUser(user, options) {
+	// let docInstance = await getDocById({
+	// 	id: options.docId
+	// });
+	// let userup = await User.updateOne({"_id": options.userId}, {
+	// 	$set: {
+	// 		"docs.$[elem].status": options.status,
+	// 		"docs.$[elem].item": options.docId
+	// 		// "docs.$[].status": options.status,
+	// 		// "docs.$[].item": options.docId
+	// 	}
+	// }, {
+	// 	// arrayFilters: [{$and: [{ "elem.status": antiStatus }, { "elem.item": options.docId }]}],
+	// 	arrayFilters: [{ "elem.item": mongoose.Types.ObjectId(options.docId) }],
+	// 	setDefaultOnInsert: true,
+	// 	upsert: true
+	// });
+	// let docup = await Doc.updateOne({"_id": options.docId}, {
+	// 	$set: {
+	// 		"users.$[elem].status": options.status,
+	// 		"users.$[elem].item": options.userId
+	// 	}
+	// }, {
+	// 	// arrayFilters: [{$and: [{ "elem.status": antiStatus }, { "elem.item": options.docId }]}],
+	// 	arrayFilters: [{ "elem.item": mongoose.Types.ObjectId(options.userId) }],
+	// 	setDefaultOnInsert: true,
+	// 	upsert: true
+	// });
+	// console.log(userup);
+	// console.log(docup);
+	// let permission = options.status ? '只读' : '读写';
+	// return await `${user.name} invite you to doc ${docInstance.collectionName}-${docInstance.documentId},${permission}`;
+
+	// // https://docs.mongodb.com/manual/reference/operator/update/positional-filtered/
+	// let antiStatus = options.status ? 0 : 1; // 取反的status
+	let userUp = await User.findOneAndUpdate({
+		_id: options.userId
+	}, {
+		"$set": {
+			"docs.$[elem].status": options.status,
+			"docs.$[elem].item": options.docId
+		}
+	}, {
+		// arrayFilters: [{$and: [{ "elem.status": antiStatus }, { "elem.item": options.docId }]}],
+		arrayFilters: [{ "elem.item": mongoose.Types.ObjectId(options.docId) }],
+		// setDefaultOnInsert: true,
+		// upsert: true
+	});
+	let docUp = await Doc.findOneAndUpdate({
+		_id: options.docId
+	}, {
+		"$set": {
+			"users.$[elem].status": options.status,
+			"users.$[elem].item": options.userId
+		}
+	}, {
+		// arrayFilters: [{$and: [{ "elem.status": antiStatus }, { "elem.item": options.userId }]}],
+		arrayFilters: [{ "elem.item": mongoose.Types.ObjectId(options.userId) }],
+		// setDefaultOnInsert: true,
+		// upsert: true
+	});
+	// 如果只是更新的话，不会使用默认值
+	// 仅用作更新，不能upsert。
+	// console.log(useradd, docadd);
+	if (docUp) {
+		let permission = options.status ? '只读' : '读写';
+		// console.log(docUp);
+		// console.log(userUp);
+		return await `${user.name} invite you to doc ${docUp.collectionName}-${docUp.documentId},${permission}`;
+	} else {
+		return Promise.reject('can not set doc user');
+	}
+
+}
+/**
+ *
+ *
+ * @param {*} user
+ * @param {*} options
+ * @param {String} options.userId
+ * @param {String} options.docId
+ * @returns
+ */
+async function removeDocUser(user, options) {
+	// check user permission
+	let userInstance = await User.findByIdAndUpdate(options.userId, {
+		$pull: {
+			docs: {
+				item: options.docId
+			}
+		}
+	});
+	let docInstance = await Doc.findByIdAndUpdate(options.docId, {
+		$pull: {
+			users: {
+				item: options.userId
+			}
+		}
+	});
+	// console.log(userInstance);
+	// console.log(docInstance);
+	if(docInstance) {
+		return await `${user.name} remove you from doc ${docInstance.collectionName}-${docInstance.documentId}`;
+	} else {
+		return Promise.reject('can not remove doc user');
+	}
 }
 
 /**
@@ -193,7 +375,7 @@ async function getDocTest(user, options) {
  */
 async function getMyDocNames(user, options) {
 	let docs = await Doc.find({ creator: user._id })
-		.select({ documentId: 1, collection: 1 });
+		.select({ documentId: 1, collectionName: 1 });
 	return await docs;
 }
 

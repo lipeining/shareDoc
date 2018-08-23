@@ -181,7 +181,8 @@ async function reg(req, res, next) {
 		password: req.body.password || '',
 		email: req.body.email || '',
 		permission: 0,
-		intro: req.body.intro || ''
+		intro: req.body.intro || '',
+		docs: []
 	};
 	let user = await userService.reg(newUser);
 	user.password = '';

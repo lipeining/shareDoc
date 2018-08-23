@@ -1,6 +1,6 @@
 主要的是：mongodb的版本不能过高，暂时使用的mongodb 3.4
     "sharedb": "^1.0.0-beta.9",
-
+如果使用3.6以下的版本，无法使用mongoose中的$ []和array update!
 ##socket.io与websocket
 socket.io与websocket可以同时共享一个server，不过，
 

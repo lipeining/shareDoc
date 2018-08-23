@@ -51,7 +51,7 @@ const UserSchema = new Schema({
 		},
 		role: {
 			type: Number,
-			default: 0
+			default: 1
 		},
 		status: {
 			type: Number,
