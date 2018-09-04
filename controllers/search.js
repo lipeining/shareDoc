@@ -31,10 +31,6 @@ async function pingServer(req, res, next) {
  * @returns
  */
 async function getDocHistory(req, res, next) {
-    let data = {
-        msg: 'hello'
-    };
-    rabbitmq.provideMsg('delta', data);
     let result = await searchService.getDocHistory();
 	return next({ msg: result });
 }

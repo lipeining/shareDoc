@@ -46,6 +46,8 @@ services:
   elasticsearch:
     image: elasticsearch
     container_name: elasticsearch
+    volumes:
+      - /esdata:/usr/share/elasticsearch/data
     ports:
       - "9200:9200"
     expose:

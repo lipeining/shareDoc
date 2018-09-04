@@ -29,8 +29,8 @@ async function ping() {
  */
 async function getDocHistory() {
 	const response = await client.search({
-		index: 'website',
-		type: 'blog',
+		index: 'document',
+		type: 'op',
 		body: {
 			query: {}
 		}

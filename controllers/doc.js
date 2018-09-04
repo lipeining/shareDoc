@@ -2,13 +2,14 @@ const docService = require('../services/doc');
 const userService = require('../services/user');
 const msgService = require('../services/message');
 var util = require('util');
+const Delta = require('quill-delta');
 const APIError = require('../tools/APIError');
 const ErrorHanlder = require('../tools/error-handler');
 const {
 	validationResult
 } = require('express-validator/check');
 const userMapSession = require('../mapper')
-	.userMapSession;	
+	.userMapSession;
 const sessionManager = require('../sessionManager');
 const socketManager = require('../socketManager');
 module.exports = ErrorHanlder({
@@ -61,7 +62,7 @@ async function createDoc(req, res, next) {
 	// one user many session
 	sessionManager.updateUserSession(req.session.id, data);
 	// update the client user info
-	socketManager.sendUserIndexMessage(user._id, 'updateUser', {user: data});
+	socketManager.sendUserIndexMessage(user._id, 'updateUser', { user: data });
 	return next({
 		msg: result
 	});
@@ -113,12 +114,11 @@ async function importDoc(req, res, next) {
 	// one user many session
 	sessionManager.updateUserSession(req.session.id, data);
 	// update the client user info
-	socketManager.sendUserIndexMessage(user._id, 'updateUser', {user: data});
+	socketManager.sendUserIndexMessage(user._id, 'updateUser', { user: data });
 	return next({
 		msg: createRes
 	});
 }
-
 
 /**
  *
@@ -160,7 +160,7 @@ async function addDocUser(req, res, next) {
 	};
 	console.log('add doc user controller');
 	// console.log(options);
-	if(options.userId == user._id) {
+	if (options.userId == user._id) {
 		return next(new APIError('can not add creator status'));
 	}
 	let content = await docService.addDocUser(user, options);
@@ -172,10 +172,10 @@ async function addDocUser(req, res, next) {
 			sessionManager.updateUserSession(sessionID, data);
 		}
 		// update the client user info
-		socketManager.sendUserIndexMessage(options.userId, 'updateUser', {user: data});	
+		socketManager.sendUserIndexMessage(options.userId, 'updateUser', { user: data });
 	}
 	// 添加对应的用户的未读消息记录
-    let msg = {
+	let msg = {
 		status: 1,
 		toUser: options.userId,
 		doc: options.docId,
@@ -183,7 +183,7 @@ async function addDocUser(req, res, next) {
 	};
 	await msgService.createMessage(msg);
 	// 推送系统消息
-	socketManager.sendUserIndexMessage(options.userId, 'systemNews', {msg: msg});
+	socketManager.sendUserIndexMessage(options.userId, 'systemNews', { msg: msg });
 	return next({
 		msg: {}
 	});
@@ -208,7 +208,7 @@ async function setDocUser(req, res, next) {
 	};
 	console.log('set doc user controller');
 	// console.log(options);
-	if(options.userId == user._id) {
+	if (options.userId == user._id) {
 		return next(new APIError('can not set creator status'));
 	}
 	let content = await docService.setDocUser(user, options);
@@ -220,10 +220,10 @@ async function setDocUser(req, res, next) {
 			sessionManager.updateUserSession(sessionID, data);
 		}
 		// update the client user info
-		socketManager.sendUserIndexMessage(options.userId, 'updateUser', {user: data});	
+		socketManager.sendUserIndexMessage(options.userId, 'updateUser', { user: data });
 	}
 	// 添加对应的用户的未读消息记录
-    let msg = {
+	let msg = {
 		status: 1,
 		toUser: options.userId,
 		doc: options.docId,
@@ -231,7 +231,7 @@ async function setDocUser(req, res, next) {
 	};
 	await msgService.createMessage(msg);
 	// 推送系统消息
-	socketManager.sendUserIndexMessage(options.userId, 'systemNews', {msg: msg});
+	socketManager.sendUserIndexMessage(options.userId, 'systemNews', { msg: msg });
 	return next({
 		msg: {}
 	});
@@ -316,8 +316,13 @@ async function getDocOps(req, res, next) {
 		documentId: req.query.documentId || ''
 	};
 	let result = await docService.getDocOps(options);
+	let delta = new Delta([]);
+	for (let i = 0; i < result.ops.length; i++) {
+		let ops = result.ops[i].op.ops;
+		delta = delta.compose(new Delta(ops));
+	}
 	return next({
-		msg: result
+		msg: delta
 	});
 }
 
