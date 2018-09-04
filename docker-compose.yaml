@@ -20,7 +20,7 @@ services:
     ports:
       - "5000:5000"
       - "5858:5858"
-    command: "node app.js"
+    command: "./node_modules/nodemon/bin/nodemon.js  --inspect=0.0.0.0:5858 app.js"
 
   redis:
     image: "redis:4.0"
@@ -43,3 +43,30 @@ services:
     volumes:
       - ./mongo.conf:/etc/mongo.conf
       - /data/mongo/db:/data/db
+  elasticsearch:
+    image: elasticsearch
+    container_name: elasticsearch
+    ports:
+      - "9200:9200"
+    expose:
+      - "9200"
+  kibana:
+    image: kibana
+    ports:
+      - 5601:5601 
+  rabbitmq:
+    image: rabbitmq:3-management
+    expose:
+      - "15672"
+      - "4369"
+      - "5671"
+      - "25672"
+      - "5672"
+    ports:
+      - "4369:4369"
+      - "5671:5671"
+      - "25672:25672"
+      - "5672:5672"
+      - "15672:15672"
+    container_name: rabbitmq
+    hostname: rabbitmq       

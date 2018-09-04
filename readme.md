@@ -21,6 +21,19 @@ https://github.com/websockets/ws/blob/master/doc/ws.md
 here is the guide line for a room
 https://stackoverflow.com/questions/4445883/node-websocket-server-possible-to-have-multiple-separate-broadcasts-for-a-si
 
+1.使用quill生成一个代码编辑器
+2.结合服务器提供编译，运行等功能。
+3.链接，链接开关，权限功能
+4.版本，操作记录量化
 
 
 
+1.去除用户，文档关联关系，只用链接关系，提供一个可扩展的quill编辑器
+
+使用队列，kafka,rabbitmq。在大文件处理和消息推送。
+使用elasticsearch记录每一个delta，并且提供搜索历史记录的功能。
+1.使用一个队列存储每一个待处理的delta
+2.将delta存储在 index: 'document'， type:'op' 中
+3.通过kibana检查正确性
+
+使用quill delta的包，实现服务器合并操作

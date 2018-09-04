@@ -35,6 +35,8 @@ var uuid = require('uuid/v4');
 var debug = require('debug')('sharedb');
 var sessionParser = require('./sessionMiddleware')
 	.sessionParser;
+var rabbitmq = require('./rabbitmq');
+const _ = require('lodash');
 // sharedb-access必须在listen中传入req。所以这样才能得到session,才能通过中间件解析session。	
 // const shareDbAccess = require('sharedb-access');
 // shareDbAccess(shareDBServer);
@@ -77,19 +79,19 @@ var sessionParser = require('./sessionMiddleware')
  * @returns {Boolean} 
  */
 function checkUserDocPermission(request) {
-	if(!request.agent.connectSession) {
+	if (!request.agent.connectSession) {
 		// in node no session just return true
 		return true;
 	} else {
 		let user = request.agent.connectSession.user;
-		if(!user){
+		if (!user) {
 			// not login
 			return false;
 		}
 		let collectionName = request.collection;
 		let documentId = request.id;
 		let action = request.action;
-		if(action=="readSnapshots"){
+		if (action == "readSnapshots") {
 			// get documentId from the snapshots
 			documentId = request.snapshots[0].id;
 		}
@@ -97,8 +99,8 @@ function checkUserDocPermission(request) {
 		// console.log(docs);
 		console.log(collectionName);
 		console.log(documentId);
-		for(let doc of docs){
-			if(doc.item.documentId==documentId && doc.item.collectionName==collectionName){
+		for (let doc of docs) {
+			if (doc.item.documentId == documentId && doc.item.collectionName == collectionName) {
 				return true;
 			}
 		}
@@ -182,7 +184,7 @@ shareDBServer.use('readSnapshots', function(request, next) {
 	// console.log(request.snapshots[0].id);
 	// console.log(`on ${request.action}-end-`);
 	// next();
-	if(checkUserDocPermission(request)){
+	if (checkUserDocPermission(request)) {
 		next();
 	} else {
 		// request.agent.stream.ws.send('readSnapshots permission is not ok');			
@@ -230,7 +232,7 @@ shareDBServer.use('submit', function(request, next) {
 	// console.log(`on ${request.action}-end-`);
 	// next();
 	// An operation is about to be submitted to the database
-	if(checkUserDocPermission(request)){
+	if (checkUserDocPermission(request)) {
 		next();
 	} else {
 		// request.agent.stream.ws.send('submit permission is not ok');			
@@ -254,7 +256,7 @@ shareDBServer.use('apply', function(request, next) {
 	// console.log(`on ${request.action}-end-`);
 	// next();
 	// An operation is about to be applied to a snapshot before being committed to the database
-	if(checkUserDocPermission(request)){
+	if (checkUserDocPermission(request)) {
 		next();
 	} else {
 		// request.agent.stream.ws.send('apply permission is not ok');			
@@ -270,7 +272,7 @@ shareDBServer.use('commit', function(request, next) {
 	// console.log(`on ${request.action}-end-`);
 	// next();
 	// An operation was applied to a snapshot; The operation and new snapshot are about to be written to the database.
-	if(checkUserDocPermission(request)){
+	if (checkUserDocPermission(request)) {
 		next();
 	} else {
 		// request.agent.stream.ws.send('commit permission is not ok');			
@@ -292,6 +294,9 @@ shareDBServer.use('afterSubmit', function(request, next) {
 	// console.log(request.collection);
 	// console.log(request.id);
 	// console.log(`on ${request.action}-end-`);
+	// console.log(request.op);
+	rabbitmq.provideMsg('op', _.omit(request.op, ['m']));
+	// rabbitmq.provideMsg('op', request.op);
 	next();
 	// if(checkUserDocPermission(request)){
 	// 	request.agent.stream.ws.send('afterSubmit permission is ok');
