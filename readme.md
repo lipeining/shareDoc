@@ -37,3 +37,34 @@ https://stackoverflow.com/questions/4445883/node-websocket-server-possible-to-ha
 3.通过kibana检查正确性
 
 使用quill delta的包，实现服务器合并操作
+
+
+关于使用CRDT，有几种可以考虑的：
+1.原生的CRDTS
+2.AutoMerge CodeMirror
+3.AutoMerge+editor => rich
+4.peer-crdt CodeMirror
+5.roshi
+6.conclave
+7.AutoMerge trellis
+8.y-js全家桶
+
+42["yjsEvent",{
+    "type":"update",
+    "ops":[{
+        "id":["EgJ9CWes8xyHBRqKATg0",3],
+        "left":["EgJ9CWes8xyHBRqKATg0",2],
+        "right":["Z3x8bGdRy3ITOcO0ATgJ",96],
+        "origin":["EgJ9CWes8xyHBRqKATg0",2],
+        "parent":["_","List_Richtext_richtext_"],
+        "struct":"Insert",
+        "content":["d"]
+    }],
+    "room":"richtext-example-quill-1.0-test"
+}]
+
+1.尝试y-webrtc,y-leveldb
+2.如何使用y-websockets-server的服务器代码，拦截，存储中间数据。
+3.如何读取leveldb的内容。
+4.如何构建一个稳定的服务器。
+
