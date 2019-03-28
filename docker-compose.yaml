@@ -1,6 +1,20 @@
 version: '3'
 
 services:
+  nginx:
+    image: nginx
+    expose:
+      - "10000"
+    ports:
+      - "10000:10000"  
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./conf.d:/etc/nginx/conf.d
+    links:
+      - sharedoc  
+    depends_on:
+      - sharedoc     
+    command: [nginx-debug, '-g', 'daemon off;']
   sharedoc:
     image: "node:8"
     working_dir: /home/node/app
@@ -43,19 +57,19 @@ services:
     volumes:
       - ./mongo.conf:/etc/mongo.conf
       - /data/mongo/db:/data/db
-  elasticsearch:
-    image: elasticsearch
-    container_name: elasticsearch
-    volumes:
-      - /esdata:/usr/share/elasticsearch/data
-    ports:
-      - "9200:9200"
-    expose:
-      - "9200"
-  kibana:
-    image: kibana
-    ports:
-      - 5601:5601 
+  # elasticsearch:
+  #   image: elasticsearch
+  #   container_name: elasticsearch
+  #   volumes:
+  #     - /esdata:/usr/share/elasticsearch/data
+  #   ports:
+  #     - "9200:9200"
+  #   expose:
+  #     - "9200"
+  # kibana:
+  #   image: kibana
+  #   ports:
+  #     - 5601:5601 
   rabbitmq:
     image: rabbitmq:3-management
     expose:

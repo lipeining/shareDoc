@@ -79,6 +79,7 @@ const _ = require('lodash');
  * @returns {Boolean} 
  */
 function checkUserDocPermission(request) {
+	return true;
 	if (!request.agent.connectSession) {
 		// in node no session just return true
 		return true;

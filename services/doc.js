@@ -42,7 +42,7 @@ async function createDoc(user, options) {
 	});
 	await userInstance.docs.push(docitem);
 	await userInstance.save();
-	return await item;
+	return await doc;
 }
 
 /**

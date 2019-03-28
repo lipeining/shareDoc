@@ -41,6 +41,7 @@ app.use(express.urlencoded({
 app.use(cookieParser());
 app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'dist')));
 
 app.use('/api/v1/', indexRouter);
 app.use('/api/v1/', usersRouter);
