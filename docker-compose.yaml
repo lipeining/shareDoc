@@ -5,11 +5,15 @@ services:
     image: nginx
     expose:
       - "10000"
+      - "443"
     ports:
       - "10000:10000"  
+      - "443:443"  
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
       - ./conf.d:/etc/nginx/conf.d
+      - ./server.crt:/usr/local/nginx/conf/server.crt
+      - ./server.key:/usr/local/nginx/conf/server.key
     links:
       - sharedoc  
     depends_on:
